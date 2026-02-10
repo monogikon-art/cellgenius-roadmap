@@ -1,0 +1,2937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projects Roadmap &amp; Capacity Planner</title>
+<link rel="icon" type="image/png" href="logo.png">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+/* ── Reset & Base ── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--card:#22263a;--border:#2d3250;
+  --text:#e8eaed;--muted:#8b8fa3;--accent:#4f8cff;--accent2:#7c5cfc;
+  --green:#2dd4a8;--orange:#f59e42;--red:#ef4444;--yellow:#eab308;
+  --cyan:#22d3ee;--pink:#ec4899;
+  --radius:10px;--shadow:0 2px 12px rgba(0,0,0,.35);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#1e2235,#252a40);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.header .brand{display:flex;align-items:center;gap:14px}
+.header .brand-logo{height:42px;width:auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.header .brand-text h1{font-size:1.25rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .brand-text .brand-name{font-size:.65rem;font-weight:600;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:1px}
+.header .meta{font-size:.75rem;color:var(--muted)}
+.header .actions{display:flex;gap:8px}
+
+/* ── Buttons ── */
+.btn{padding:7px 16px;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#3a73e8}
+.btn-success{background:var(--green);color:#111}
+.btn-success:hover{background:#25b897}
+.btn-warn{background:var(--orange);color:#111}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:4px 10px;font-size:.72rem}
+.btn-icon{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px}
+.btn-icon:hover{color:var(--accent)}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto}
+.tab{padding:12px 22px;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;padding:20px;max-height:calc(100vh - 120px);overflow-y:auto}
+.tab-panel.active{display:block}
+
+/* ── Cards & Panels ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h3{font-size:.95rem;margin-bottom:10px;color:var(--accent)}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1;min-width:200px}
+
+/* ── Stats Bar ── */
+.stats-bar{display:flex;gap:12px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 16px;display:flex;flex-direction:column;align-items:center;min-width:100px}
+.stat .val{font-size:1.3rem;font-weight:700}
+.stat .lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.stat.blue .val{color:var(--accent)}
+.stat.green .val{color:var(--green)}
+.stat.orange .val{color:var(--orange)}
+.stat.red .val{color:var(--red)}
+.stat.purple .val{color:var(--accent2)}
+.stat.cyan .val{color:var(--cyan)}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input,.toolbar select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:.8rem}
+.toolbar input:focus,.toolbar select:focus{outline:none;border-color:var(--accent)}
+.toolbar select{min-width:130px}
+.toolbar .spacer{flex:1}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+thead th{background:var(--surface);color:var(--muted);font-weight:600;text-transform:uppercase;font-size:.68rem;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--accent)}
+thead th.sorted-asc::after{content:" ▲";color:var(--accent)}
+thead th.sorted-desc::after{content:" ▼";color:var(--accent)}
+tbody td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+tbody tr:hover{background:rgba(79,140,255,.06)}
+tbody tr.selected{background:rgba(79,140,255,.12)}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600}
+.badge-active{background:rgba(45,212,168,.15);color:var(--green)}
+.badge-pipeline{background:rgba(79,140,255,.15);color:var(--accent)}
+.badge-must{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-should{background:rgba(245,158,66,.15);color:var(--orange)}
+.badge-could{background:rgba(234,179,8,.15);color:var(--yellow)}
+.badge-wont{background:rgba(139,143,163,.15);color:var(--muted)}
+.badge-now{background:rgba(45,212,168,.2);color:var(--green);border:1px solid var(--green)}
+.badge-next{background:rgba(79,140,255,.2);color:var(--accent);border:1px solid var(--accent)}
+.badge-future{background:rgba(124,92,252,.2);color:var(--accent2);border:1px solid var(--accent2)}
+
+/* ── Pagination ── */
+.pagination{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:14px}
+.pagination button{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.78rem}
+.pagination button:hover{border-color:var(--accent)}
+.pagination button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pagination button:disabled{opacity:.4;cursor:default}
+.pagination span{font-size:.78rem;color:var(--muted)}
+
+/* ── Gantt ── */
+.gantt-container{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 260px);position:relative}
+.gantt-header{display:flex;position:sticky;top:0;z-index:10;background:var(--surface)}
+.gantt-label-col{min-width:280px;max-width:280px;flex-shrink:0}
+.gantt-timeline{flex:1;position:relative;min-width:1200px}
+.gantt-months{display:flex;border-bottom:1px solid var(--border)}
+.gantt-month{flex:1;text-align:center;padding:6px 0;font-size:.68rem;color:var(--muted);border-right:1px solid var(--border);font-weight:600}
+.gantt-row{display:flex;border-bottom:1px solid rgba(45,50,80,.3);min-height:28px;align-items:center}
+.gantt-row:hover{background:rgba(79,140,255,.04)}
+.gantt-row-highlighted{background:rgba(99,102,241,.12)!important;border-left:3px solid var(--accent)}
+.gantt-row-label{min-width:280px;max-width:280px;flex-shrink:0;padding:4px 10px;font-size:.72rem;display:flex;align-items:center;gap:3px}
+.gantt-row-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gantt-row-bar-area{flex:1;position:relative;min-width:1200px;min-height:22px}
+.gantt-bar{position:absolute;height:18px;border-radius:4px;top:2px;cursor:pointer;transition:opacity .2s;font-size:.62rem;color:#fff;display:flex;align-items:center;padding:0 6px;overflow:hidden;white-space:nowrap}
+.gantt-bar:hover{opacity:.85;z-index:5}
+.gantt-bar.active{background:linear-gradient(135deg,var(--green),#1ba880)}
+.gantt-bar.pipeline{background:linear-gradient(135deg,var(--accent),#3a6fd8)}
+.gantt-grid-line{position:absolute;top:0;bottom:0;width:1px;background:rgba(45,50,80,.3)}
+.gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:4;opacity:.7}
+/* Gantt Capacity Panel */
+.gantt-cap-panel{margin-bottom:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px}
+.gantt-cap-panel h4{font-size:.76rem;color:var(--orange);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.gantt-cap-grid{display:flex;gap:8px;flex-wrap:wrap}
+.gantt-cap-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 9px;min-width:150px;max-width:195px}
+.gantt-cap-card .gc-name{font-size:.67rem;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt-cap-card .gc-bar{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:2px}
+.gantt-cap-card .gc-fill{height:100%;border-radius:3px}
+.gantt-cap-card .gc-info{font-size:.6rem;color:var(--muted);display:flex;justify-content:space-between}
+.gantt-check{width:14px;height:14px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+
+/* ── Roadmap Columns ── */
+.roadmap-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;max-height:calc(100vh - 260px);overflow-y:auto}
+.roadmap-col{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.roadmap-col h3{font-size:.9rem;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.roadmap-col.now h3{color:var(--green)}
+.roadmap-col.next h3{color:var(--accent)}
+.roadmap-col.future h3{color:var(--accent2)}
+.roadmap-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;cursor:default;transition:.2s}
+.roadmap-item:hover{border-color:var(--accent);transform:translateY(-1px)}
+.roadmap-item .ri-title{font-size:.78rem;font-weight:600;margin-bottom:4px}
+.roadmap-item .ri-meta{font-size:.65rem;color:var(--muted)}
+.roadmap-item .ri-score{font-size:.72rem;font-weight:700;float:right}
+
+/* ── Config ── */
+.config-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.config-field{display:flex;flex-direction:column;gap:4px}
+.config-field label{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:600}
+.config-field input,.config-field select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:.82rem}
+.config-field input:focus{outline:none;border-color:var(--accent)}
+
+/* ── Team Capacity ── */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.team-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px}
+.team-card .tc-name{font-size:.75rem;font-weight:600;margin-bottom:6px}
+.team-card .tc-bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:4px}
+.team-card .tc-fill{height:100%;border-radius:4px;transition:width .3s}
+.team-card .tc-info{font-size:.65rem;color:var(--muted);display:flex;justify-content:space-between}
+
+/* ── Charts ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.chart-card h4{font-size:.82rem;color:var(--accent);margin-bottom:10px}
+.chart-card canvas{max-height:260px}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr}.roadmap-cols{grid-template-columns:1fr}}
+
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);width:700px;max-width:95vw;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.modal h2{font-size:1.05rem;margin-bottom:16px;color:var(--accent)}
+.modal .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal .form-grid.full{grid-template-columns:1fr}
+.modal label{font-size:.72rem;color:var(--muted);display:block;margin-bottom:3px}
+.modal input,.modal select,.modal textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:.82rem}
+.modal textarea{resize:vertical;min-height:60px}
+.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.modal-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)}
+.modal-tab{padding:8px 18px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.modal-tab:hover{color:var(--text)}
+.modal-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.modal-tab-content{display:none}
+.modal-tab-content.active{display:block}
+.team-alloc-grid{display:grid;gap:10px}
+.team-alloc-row{display:grid;grid-template-columns:1fr 80px 1fr 50px;gap:10px;align-items:center;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.team-alloc-row .ta-name{font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-alloc-row .ta-cap{font-size:.65rem;color:var(--muted)}
+.team-alloc-row input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+.team-alloc-row .ta-val{font-size:.82rem;font-weight:700;color:var(--accent);text-align:center}
+.team-alloc-row.over-cap{border-color:var(--red);background:rgba(255,80,80,.06)}
+.team-alloc-row.over-cap .ta-val{color:var(--red)}
+.team-alloc-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.team-alloc-summary .tas-item{font-size:.72rem;color:var(--muted)}
+.team-alloc-summary .tas-item b{color:var(--text)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--green);color:var(--green);padding:10px 20px;border-radius:8px;font-size:.82rem;z-index:300;transform:translateY(80px);opacity:0;transition:.3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{border-color:var(--red);color:var(--red)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* ── Loading ── */
+.loading{text-align:center;padding:60px;color:var(--muted)}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Clickable Stats ── */
+.stat.clickable{cursor:pointer;transition:all .2s;user-select:none}
+.stat.clickable:hover{border-color:var(--accent);transform:translateY(-2px)}
+.stat.active-filter{border-width:2px;transform:translateY(-2px)}
+.stat.active-filter.blue{border-color:var(--accent);box-shadow:0 0 12px rgba(79,140,255,.3)}
+.stat.active-filter.green{border-color:var(--green);box-shadow:0 0 12px rgba(45,212,168,.3)}
+.stat.active-filter.orange{border-color:var(--orange);box-shadow:0 0 12px rgba(245,158,66,.3)}
+.stat.active-filter.purple{border-color:var(--accent2);box-shadow:0 0 12px rgba(124,92,252,.3)}
+.stat.active-filter.cyan{border-color:var(--cyan);box-shadow:0 0 12px rgba(34,211,238,.3)}
+
+/* ── Capacity Limit in Header ── */
+.cap-limit{display:flex;flex-direction:column;align-items:center;gap:2px}
+.cap-limit label{font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.5px}
+.cap-limit-ctrl{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px}
+.cap-limit-ctrl input{background:transparent;border:none;color:var(--orange);font-size:1rem;font-weight:700;width:48px;text-align:center;outline:none}
+.cap-limit-ctrl span{color:var(--muted);font-size:.8rem;font-weight:600}
+
+/* ── Draggable Gantt ── */
+.gantt-bar.draggable{cursor:grab}
+.gantt-bar.dragging{cursor:grabbing;opacity:.85;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,.5)}
+.gantt-bar .gantt-resize{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:6}
+.gantt-bar .gantt-resize-l{left:0;border-radius:4px 0 0 4px}
+.gantt-bar .gantt-resize-r{right:0;border-radius:0 4px 4px 0}
+.gantt-bar .gantt-resize:hover{background:rgba(255,255,255,.25)}
+
+/* ── Generate Roadmap Button ── */
+.btn-generate{background:linear-gradient(135deg,#7c5cfc,#4f8cff);color:#fff;font-size:.82rem;padding:8px 18px;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:all .25s;box-shadow:0 2px 12px rgba(124,92,252,.35);display:inline-flex;align-items:center;gap:6px}
+.btn-generate:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(124,92,252,.5)}
+.btn-generate:active{transform:translateY(0)}
+.btn-generate.running{animation:pulse-gen 1.2s infinite}
+.saved-roadmaps-bar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;flex-wrap:wrap}
+.saved-roadmaps-bar .sr-label{font-size:.72rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.saved-roadmaps-bar .sr-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.sr-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:.72rem;font-weight:600;background:var(--card);border:1px solid var(--border);cursor:pointer;transition:.2s;position:relative}
+.sr-chip:hover{border-color:var(--accent);background:rgba(79,140,255,.08)}
+.sr-chip.active{border-color:var(--accent);background:rgba(79,140,255,.15);color:var(--accent)}
+.sr-chip .sr-chip-del{font-size:.6rem;color:var(--muted);cursor:pointer;margin-left:2px;opacity:.5;transition:.2s}
+.sr-chip .sr-chip-del:hover{opacity:1;color:var(--red)}
+.sr-chip .sr-chip-date{font-size:.6rem;color:var(--muted);font-weight:400}
+.sr-save-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
+.sr-save-modal-overlay.active{display:flex}
+.sr-save-modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);width:480px;max-width:92vw;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.sr-save-modal h3{font-size:1rem;margin-bottom:14px;color:var(--accent)}
+.sr-save-modal input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:.88rem;margin-bottom:12px}
+.sr-save-modal textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:.78rem;resize:vertical;min-height:60px;margin-bottom:14px}
+.sr-save-modal .sr-actions{display:flex;gap:8px;justify-content:flex-end}
+.sr-detail-panel{margin-top:6px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.72rem}
+.sr-detail-panel .sr-detail-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sr-detail-panel .sr-detail-stats{display:flex;gap:14px;flex-wrap:wrap}
+.sr-detail-panel .sr-detail-stat{color:var(--muted)}
+.sr-detail-panel .sr-detail-stat b{color:var(--text)}
+@keyframes pulse-gen{0%,100%{box-shadow:0 2px 12px rgba(124,92,252,.35)}50%{box-shadow:0 2px 24px rgba(124,92,252,.7)}}
+
+/* ── Monthly Capacity Utilization Row ── */
+.gantt-cap-row{display:flex;position:sticky;top:28px;z-index:9;background:var(--surface);border-bottom:1px solid var(--border)}
+.gantt-cap-row .gantt-label-col{font-size:.62rem;color:var(--orange);font-weight:600;padding:3px 10px;display:flex;align-items:center;gap:3px}
+.gantt-cap-cell{flex:1;text-align:center;font-size:.62rem;font-weight:700;padding:3px 0;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:1px}
+.gantt-cap-cell .cap-pct{font-size:.66rem}
+.gantt-cap-cell .cap-bar-wrap{width:80%;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.gantt-cap-cell .cap-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+.gantt-cap-cell.cap-flash{animation:capFlash .5s ease}
+@keyframes capFlash{0%{background:rgba(245,158,66,.25)}100%{background:transparent}}
+.gantt-cap-card.cap-flash{animation:capCardFlash .5s ease}
+@keyframes capCardFlash{0%{border-color:var(--orange);box-shadow:0 0 8px rgba(245,158,66,.4)}100%{border-color:var(--border);box-shadow:none}}
+
+/* ── Roadmap Generation Panel ── */
+.roadmap-gen-panel{background:linear-gradient(135deg,rgba(124,92,252,.08),rgba(79,140,255,.08));border:1px solid var(--accent2);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.roadmap-gen-panel h4{font-size:.85rem;color:var(--accent2);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.roadmap-gen-panel .gen-stats{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
+.roadmap-gen-panel .gen-stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;text-align:center}
+.roadmap-gen-panel .gen-stat .gs-val{font-size:1.1rem;font-weight:700}
+.roadmap-gen-panel .gen-stat .gs-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase}
+.roadmap-gen-panel .gen-log{max-height:120px;overflow-y:auto;font-size:.68rem;color:var(--muted);background:var(--bg);border-radius:6px;padding:8px;margin-top:8px;font-family:monospace;line-height:1.5}
+.roadmap-gen-panel .gen-log .log-now{color:var(--green)}
+.roadmap-gen-panel .gen-log .log-next{color:var(--accent)}
+.roadmap-gen-panel .gen-log .log-future{color:var(--accent2)}
+.roadmap-gen-panel .gen-log .log-warn{color:var(--orange)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand">
+    <img src="logo.png" alt="CellGenius" class="brand-logo">
+    <div class="brand-text">
+      <div class="brand-name">CellGenius</div>
+      <h1>Projects Roadmap &amp; Capacity Planner</h1>
+      <div class="meta" id="headerMeta">Loading...</div>
+    </div>
+  </div>
+  <div class="cap-limit">
+    <label>🔥 Capacity Limit</label>
+    <div class="cap-limit-ctrl"><input type="number" id="globalCapLimit" value="120" min="50" max="300" step="10" onchange="updateCapacityLimit(this.value)"><span>%</span></div>
+  </div>
+  <div class="actions">
+    <label class="btn btn-outline" style="cursor:pointer">📂 Upload Excel<input type="file" id="excelUpload" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleExcelUpload(event)"></label>
+    <button class="btn btn-primary" onclick="recalcAll()">⚡ Recalculate</button>
+    <button class="btn-generate" id="btnGenRoadmap" onclick="generateOptimalRoadmap()">🚀 Generate Roadmap</button>
+    <button class="btn btn-success" onclick="exportToExcel()">💾 Export Excel</button>
+    <button class="btn btn-outline" onclick="exportJSON()">📋 Export JSON</button>
+    <label class="btn btn-outline" style="cursor:pointer">📥 Import JSON<input type="file" id="jsonUpload" accept=".json" style="display:none" onchange="handleJSONImport(event)"></label>
+  </div>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-bar" id="statsBar"></div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="editor">📋 Project Editor</div>
+  <div class="tab" data-tab="config">⚙️ Configuration</div>
+  <div class="tab" data-tab="analytics">📈 Analytics</div>
+  <div class="tab" data-tab="gantt">📅 Gantt Chart</div>
+  <div class="tab" data-tab="roadmap">🗺️ Roadmap</div>
+</div>
+
+<!-- ═══ TAB 1: EDITOR ═══ -->
+<div class="tab-panel active" id="tab-editor">
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="🔍 Search projects..." style="width:240px" oninput="filterProjects()">
+    <select id="filterStatus" onchange="filterProjects()"><option value="">All Statuses</option><option>Active</option><option>Pipeline</option></select>
+    <select id="filterDivision" onchange="filterProjects()"><option value="">All Divisions</option></select>
+    <select id="filterCoverage" onchange="filterProjects()"><option value="">All Coverages</option></select>
+    <select id="filterSignificance" onchange="filterProjects()"><option value="">All Significance</option></select>
+    <select id="filterMoscow" onchange="filterProjects()"><option value="">All MoSCoW</option><option>Must Have</option><option>Should Have</option><option>Could Have</option><option>Won't Have</option></select>
+    <select id="filterBucket" onchange="filterProjects()"><option value="">All Buckets</option><option>NOW</option><option>NEXT</option><option>FUTURE</option></select>
+    <span class="spacer"></span>
+    <span id="filterCount" style="font-size:.78rem;color:var(--muted)"></span>
+    <select id="pageSize" onchange="state.pageSize=+this.value;state.page=1;renderTable()"><option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option><option value="500">All</option></select>
+    <button class="btn btn-sm btn-outline" onclick="exportCSV()">📥 CSV</button>
+  </div>
+  <div class="tbl-wrap" id="projectTable"><div class="loading" id="initialLoading">⏳ Loading projects from Excel...</div></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- ═══ TAB 2: CONFIG ═══ -->
+<div class="tab-panel" id="tab-config">
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <h3>🏷️ MoSCoW Classification Rules</h3>
+        <p style="font-size:.72rem;color:var(--muted);margin-bottom:8px">Projects are automatically classified based on significance &amp; RICE score</p>
+        <div style="font-size:.78rem;line-height:1.8">
+          <div><span class="badge badge-must">Must Have</span> Regulatory (Central Bank) or No Choice significance · <i style="color:var(--muted)">Never falls to FUTURE</i></div>
+          <div><span class="badge badge-should">Should Have</span> RICE Score ≥ 6 · <i style="color:var(--muted)">Active projects auto-classified here</i></div>
+          <div><span class="badge badge-could">Could Have</span> RICE Score ≥ 3 (Medium priority)</div>
+          <div><span class="badge badge-wont">Won't Have</span> RICE Score &lt; 3 or unscored</div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="recalcAll()">🔄 Recalculate All</button>
+          <div class="config-field" style="display:flex;align-items:center;gap:6px;margin:0"><label style="font-size:.72rem;white-space:nowrap">Default Weight</label><input type="number" id="cfgDefWeight" value="1" step="0.5" min="0.5" max="5" style="width:60px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📅 Planning Horizon</h3>
+        <div class="config-grid">
+          <div class="config-field"><label>Start Date</label><input type="date" id="cfgStart" value="2026-01-01"></div>
+          <div class="config-field"><label>End Date</label><input type="date" id="cfgEnd" value="2027-06-30"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🎯 Capacity-Based Roadmap Rules</h3>
+        <p style="font-size:.72rem;color:var(--muted);margin-bottom:8px">Projects auto-categorised by capacity constraints &amp; RICE priority</p>
+        <div style="font-size:.78rem;line-height:1.7">
+          <div><span class="badge badge-now">NOW</span> Active + Must Have + Should Have (within capacity)</div>
+          <div><span class="badge badge-next">NEXT</span> Should Have overflow + Could Have + Must Have overflow</div>
+          <div><span class="badge badge-future">FUTURE</span> Won't Have (low priority / unscored)</div>
+        </div>
+        <div class="config-grid" style="margin-top:10px">
+          <div class="config-field"><label>Max Parallel Projects</label><input type="number" id="cfgMaxParallel" value="80" min="10" max="500" step="5" onchange="state.maxParallelProjects=+this.value"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>👥 IT Team Capacity</h3>
+        <p style="font-size:.72rem;color:var(--muted);margin-bottom:12px">FTE capacity per team — edit name, FTE, or remove teams</p>
+        <div class="team-grid" id="teamCapGrid"></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-sm btn-success" onclick="addTeam()">➕ Add Team</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 3: ANALYTICS ═══ -->
+<div class="tab-panel" id="tab-analytics">
+  <div class="chart-grid" id="chartGrid"></div>
+  <div class="card" style="margin-top:16px">
+    <h3>🏆 Top 20 Projects by RICE Score</h3>
+    <div class="tbl-wrap" id="topProjectsTable"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🔥 Team Capacity — Max Load (18-Month Horizon)</h3>
+    <div id="capacityAnalysis"></div>
+  </div>
+</div>
+
+<!-- ═══ TAB 4: GANTT ═══ -->
+<div class="tab-panel" id="tab-gantt">
+  <div id="roadmapGenPanel"></div>
+  <div class="toolbar">
+    <input type="text" id="ganttSearch" placeholder="🔍 Search projects..." style="width:220px" oninput="renderGantt()">
+    <select id="ganttType" onchange="renderGantt()">
+      <option value="">All Project Types</option>
+      <option value="tech">🖥️ Technology Projects</option>
+      <option value="other">📦 Other Requests</option>
+    </select>
+    <select id="ganttFilter" onchange="renderGantt()">
+      <option value="">All Statuses</option>
+      <option value="Active">Active Only</option>
+      <option value="Pipeline">Pipeline Only</option>
+      <option value="dated">With Dates Only</option>
+    </select>
+    <select id="ganttGroup" onchange="renderGantt()">
+      <option value="">No Grouping</option>
+      <option value="division">By Division</option>
+      <option value="coverage">By Coverage</option>
+      <option value="significance">By Significance</option>
+      <option value="nature">By Nature</option>
+    </select>
+    <select id="ganttSort" onchange="renderGantt()">
+      <option value="start">Sort by Start Date</option>
+      <option value="rice">Sort by RICE Score</option>
+      <option value="title">Sort by Title</option>
+    </select>
+    <span class="spacer"></span>
+    <span id="ganttCount" style="font-size:.78rem;color:var(--muted)"></span>
+    <label style="font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:4px">🔥 Teams ≥ <input type="number" id="ganttCapThreshold" value="120" min="0" max="300" step="10" style="width:52px" onchange="renderGanttCapacity()">%</label>
+    <button class="btn btn-sm btn-primary" onclick="openSaveRoadmapModal()" style="font-size:.72rem;padding:4px 12px">💾 Save Version</button>
+  </div>
+  <div id="savedRoadmapsBar"></div>
+  <div id="savedRoadmapDetail"></div>
+  <div id="ganttCapPanel"></div>
+  <div class="gantt-container" id="ganttContainer"></div>
+</div>
+
+<!-- ═══ TAB 5: ROADMAP ═══ -->
+<div class="tab-panel" id="tab-roadmap">
+  <div class="toolbar">
+    <input type="text" id="roadmapSearch" placeholder="🔍 Search projects..." style="width:220px" oninput="renderRoadmap()">
+    <select id="roadmapType" onchange="renderRoadmap()">
+      <option value="">All Project Types</option>
+      <option value="tech">🖥️ Technology Projects</option>
+      <option value="other">📦 Other Requests</option>
+    </select>
+    <select id="roadmapDivision" onchange="renderRoadmap()"><option value="">All Divisions</option></select>
+    <select id="roadmapCoverage" onchange="renderRoadmap()"><option value="">All Coverages</option></select>
+    <span class="spacer"></span>
+    <span id="roadmapCount" style="font-size:.78rem;color:var(--muted)"></span>
+  </div>
+  <div class="roadmap-cols" id="roadmapCols"></div>
+</div>
+
+<!-- ═══ EDIT MODAL ═══ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2 id="modalTitle">Edit Project</h2>
+    <div class="modal-tabs">
+      <div class="modal-tab active" data-mtab="details" onclick="switchModalTab('details')">📋 Details</div>
+      <div class="modal-tab" data-mtab="teams" onclick="switchModalTab('teams')">👥 Teams Required</div>
+    </div>
+    <div class="modal-tab-content active" id="mtab-details">
+      <div class="form-grid" id="modalForm"></div>
+    </div>
+    <div class="modal-tab-content" id="mtab-teams">
+      <div id="modalTeamsContent"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveModal()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Roadmap Modal -->
+<div class="sr-save-modal-overlay" id="saveRoadmapModal">
+  <div class="sr-save-modal">
+    <h3>💾 Save Roadmap Version</h3>
+    <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">Version Name</label>
+    <input id="srName" placeholder="e.g. Option A – Regulatory First" maxlength="80">
+    <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">Notes (optional)</label>
+    <textarea id="srNotes" placeholder="Key assumptions or rationale for this version..."></textarea>
+    <div class="sr-actions">
+      <button class="btn btn-outline" onclick="closeSaveRoadmapModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmSaveRoadmap()">Save Version</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   STATE & CONFIG
+   ══════════════════════════════════════════════════════════════ */
+const STORAGE_KEY = 'cellgenius_roadmap_data';
+const STORAGE_TEAMS_KEY = 'cellgenius_roadmap_teams';
+const state = {
+  projects: [],
+  teamHeaders: [],
+  teams: [],
+  page: 1,
+  pageSize: 25,
+  sortCol: null,
+  sortDir: 1,
+  editIdx: -1,
+  filtered: [],
+  charts: {},
+  excludedFromRoadmap: new Set(),
+  globalCapacityLimit: 120,
+  maxParallelProjects: 80,
+  globalFilter: null,
+  ganttTeamFilter: null,
+  highlightedProjectKey: null,
+  savedRoadmaps: [],
+  activeRoadmapId: null,
+};
+
+const RICE_REACH = {'1 - Minimal':1,'2 - Limited':2,'3 - Moderate':3,'4 - Broad':4,'5 - Extensive':5};
+const RICE_IMPACT = {'1 - Low Impact':1,'2 - Manageable':2,'3 - Medium':3,'4 - High':4,'5 - Critical':5};
+const RICE_CONF = {'50 % - Medium Confidence':.5,'75 % - High Confidence':.75,'100 % - Very Highly Confident':1};
+const RICE_EFFORT = {'1 - Simple':1,'2 - Moderately Simple':2,'3 - Complicated':3,'4 - Major':4};
+
+const NATURES = ['Consulting & Professional Services','Facilities & Physical Assets','Hardware Devices','Major System Implementation','New Product / Software Implementation','Outsourced Resources','Software Enhancements','Software Licences & Subscriptions','System Upgrade'];
+const COVERAGES = ['BisB','Group','KSA','NBB','UAE'];
+const SIGNIFICANCES = ['Customer Centricity','Mandate (Internal/ External)','No Choice','Other','Regulatory (Central Bank)','Strategic'];
+const STATUSES = ['Active','Pipeline'];
+
+const TECH_NATURES = new Set([
+  'Major System Implementation',
+  'New Product / Software Implementation',
+  'Software Enhancements',
+  'System Upgrade',
+]);
+function isTechProject(p) { return TECH_NATURES.has(p.nature); }
+
+/** Universal text search — matches query against ALL project fields */
+function matchesSearch(p, q) {
+  if (!q) return true;
+  const hay = [
+    p.id, p.title, p.nature, p.coverage, p.division, p.significance,
+    p.theme, p.status, p.startDate, p.endDate, p.reach, p.impact,
+    p.confidence, p.effort, p.moscow, p.bucket,
+    p.riceScore != null ? String(p.riceScore) : '',
+    p.duration != null ? String(p.duration) : '',
+  ].filter(Boolean).join(' ').toLowerCase();
+  return q.split(/\s+/).every(term => hay.includes(term));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RICE ENGINE
+   ══════════════════════════════════════════════════════════════ */
+function parseRICE(v, map) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return v;
+  const s = String(v).trim();
+  if (map[s] !== undefined) return map[s];
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function calcRICE(p) {
+  const r = parseRICE(p.reach, RICE_REACH);
+  const i = parseRICE(p.impact, RICE_IMPACT);
+  const c = parseRICE(p.confidence, RICE_CONF);
+  const e = parseRICE(p.effort, RICE_EFFORT);
+  const wEl = document.getElementById('cfgDefWeight');
+  const w = p.stratWeight != null ? +p.stratWeight : (wEl ? +wEl.value : 1);
+  if (r && i && c && e) {
+    return +((r * i * c * (w || 1)) / e).toFixed(2);
+  }
+  return null;
+}
+
+/**
+ * MoSCoW classification:
+ *  - Must Have: Regulatory (Central Bank) or No Choice significance
+ *  - Should Have: High RICE score (≥ 6)
+ *  - Could Have: Medium RICE score (≥ 3)
+ *  - Won't Have: Low RICE score (< 3) or unscored
+ */
+function classifyMoSCoW(score, project) {
+  // Active projects → only Must Have or Should Have (already approved)
+  if (project && project.status === 'Active') {
+    const sig = (project.significance || '').toLowerCase();
+    if (sig.includes('regulatory') || sig.includes('no choice')) return 'Must Have';
+    return 'Should Have';
+  }
+  // Must Have: Regulatory or No Choice — regardless of score
+  if (project) {
+    const sig = (project.significance || '').toLowerCase();
+    if (sig.includes('regulatory') || sig.includes('no choice')) return 'Must Have';
+  }
+  if (score == null) return "Won't Have";
+  if (score >= 6) return 'Should Have';
+  if (score >= 3) return 'Could Have';
+  return "Won't Have";
+}
+
+function assignBucket(p) {
+  // Legacy fallback for single project
+  if (p.status === 'Active') return 'NOW';
+  return 'NEXT';
+}
+
+/** MoSCoW-aware roadmap categorisation engine.
+ *  Active → NOW (Must Have / Should Have only).
+ *  Pipeline Must Have → NOW or NEXT (never FUTURE — time-critical).
+ *  Max parallel projects enforced. */
+function calcRoadmapCategories() {
+  const limit = state.globalCapacityLimit / 100;
+  const maxPar = state.maxParallelProjects || 80;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const teamLoads = {};
+  state.teams.forEach(t => { teamLoads[t.name] = 0; });
+
+  // Step 1: Active → NOW
+  let nowRunning = 0;
+  state.projects.forEach(p => {
+    if (p.status === 'Active') {
+      p.bucket = 'NOW';
+      nowRunning++;
+      const dMon = (p.duration && +p.duration > 0) ? +p.duration : 3;
+      p.startDate = today.toISOString().slice(0,10);
+      const endDate = new Date(today);
+      endDate.setMonth(endDate.getMonth() + dMon);
+      p.endDate = endDate.toISOString().slice(0,10);
+      if (p.teams) {
+        Object.entries(p.teams).forEach(([name, val]) => {
+          if (val) teamLoads[name] = (teamLoads[name] || 0) + val;
+        });
+      }
+    }
+  });
+
+  // Step 2: Pipeline sorted by MoSCoW priority then RICE
+  const MOSCOW_ORDER = {'Must Have':0,'Should Have':1,'Could Have':2,"Won't Have":3};
+  const pipeline = state.projects
+    .filter(p => p.status !== 'Active')
+    .sort((a, b) => {
+      const ma = MOSCOW_ORDER[a.moscow] ?? 3, mb = MOSCOW_ORDER[b.moscow] ?? 3;
+      if (ma !== mb) return ma - mb;
+      return (b.riceScore || 0) - (a.riceScore || 0);
+    });
+
+  // Step 3: MoSCoW-based bucket assignment with capacity + parallel limit
+  pipeline.forEach(p => {
+    const m = p.moscow || "Won't Have";
+    if (m === 'Must Have') {
+      // Must Have → NOW if parallel limit allows, else NEXT (NEVER FUTURE)
+      if (nowRunning < maxPar) {
+        p.bucket = 'NOW';
+        nowRunning++;
+        if (p.teams) Object.entries(p.teams).forEach(([name, val]) => {
+          if (val) teamLoads[name] = (teamLoads[name] || 0) + val;
+        });
+      } else {
+        p.bucket = 'NEXT'; // Must Have overflow → NEXT, never FUTURE
+      }
+    } else if (m === 'Should Have') {
+      // Should Have → NOW if capacity fits + parallel limit
+      let fits = nowRunning < maxPar;
+      if (fits && p.teams) {
+        for (const [name, val] of Object.entries(p.teams)) {
+          if (!val) continue;
+          const team = state.teams.find(t => t.name === name);
+          if (team && team.capacity > 0 && (teamLoads[name] || 0) + val > team.capacity * limit) {
+            fits = false; break;
+          }
+        }
+      }
+      if (fits) {
+        p.bucket = 'NOW';
+        nowRunning++;
+        if (p.teams) Object.entries(p.teams).forEach(([name, val]) => {
+          if (val) teamLoads[name] = (teamLoads[name] || 0) + val;
+        });
+      } else {
+        p.bucket = 'NEXT';
+      }
+    } else if (m === 'Could Have') {
+      p.bucket = 'NEXT';
+    } else {
+      p.bucket = 'FUTURE';
+    }
+  });
+}
+
+function recalcAll() {
+  state.projects.forEach(p => {
+    const score = calcRICE(p);
+    if (score !== null) p.riceScore = score;
+    p.moscow = classifyMoSCoW(p.riceScore != null ? +p.riceScore : null, p);
+  });
+  calcRoadmapCategories();
+  // Reset lazy flags so all tabs re-render on next visit
+  _tabRendered.config = false;
+  _tabRendered.analytics = false;
+  _tabRendered.gantt = false;
+  _tabRendered.roadmap = false;
+  renderAll();
+  toast('Recalculated RICE scores, MoSCoW & Buckets for all projects');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DATA LOADING — Browser-based (no server needed)
+   ══════════════════════════════════════════════════════════════ */
+
+// Column mapping matching the Excel structure (1-based)
+const COL_MAP = {
+  id:1, title:2, nature:3, coverage:4, division:5,
+  significance:6, theme:7, status:8, startDate:9,
+  endDate:10, duration:11, reach:12, impact:13,
+  confidence:14, effort:15, stratWeight:16, riceScore:17,
+  moscow:18, bucket:19
+};
+const TEAM_START_COL = 20;
+
+function _dtCell(v) {
+  if (v == null) return null;
+  if (v instanceof Date) return v.toISOString().slice(0,10);
+  if (typeof v === 'number') {
+    // Excel serial date
+    try {
+      const d = XLSX.SSF.parse_date_code(v);
+      if (d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+    } catch(e) {}
+  }
+  if (typeof v === 'string' && v.trim()) return v.trim().slice(0,10);
+  return null;
+}
+
+function _safeCell(v) {
+  if (v == null) return null;
+  if (typeof v === 'number') return v;
+  if (v instanceof Date) return _dtCell(v);
+  const s = String(v).trim();
+  return s || null;
+}
+
+function _findSheet(wb, candidates) {
+  for (const c of candidates) {
+    for (const sn of wb.SheetNames) {
+      if (sn.toLowerCase().includes(c.toLowerCase())) return wb.Sheets[sn];
+    }
+  }
+  return null;
+}
+
+function parseExcelBuffer(data) {
+  const wb = XLSX.read(data, { type: 'array', cellDates: true });
+
+  // Find project sheet
+  let ws = _findSheet(wb, ['Project Details', 'Projects', 'Project']);
+  if (!ws) {
+    for (const sn of wb.SheetNames) {
+      if (!/(start|config|help|guide)/i.test(sn)) { ws = wb.Sheets[sn]; break; }
+    }
+  }
+  if (!ws) ws = wb.Sheets[wb.SheetNames[0]];
+
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+
+  // Read team headers from row 1 (columns T onward = col 19 in 0-based)
+  const teamHeaders = [];
+  for (let c = TEAM_START_COL - 1; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({r: 0, c})];
+    if (cell && cell.v) teamHeaders.push(String(cell.v).trim());
+    else break;
+  }
+
+  // Read projects from row 2+
+  const projects = [];
+  for (let r = 1; r <= range.e.r; r++) {
+    const titleCell = ws[XLSX.utils.encode_cell({r, c: COL_MAP.title - 1})];
+    if (!titleCell || !titleCell.v) continue;
+
+    const proj = {};
+    for (const [key, ci] of Object.entries(COL_MAP)) {
+      const cell = ws[XLSX.utils.encode_cell({r, c: ci - 1})];
+      const v = cell ? cell.v : null;
+      if (key === 'startDate' || key === 'endDate') {
+        proj[key] = _dtCell(v);
+      } else {
+        proj[key] = _safeCell(v);
+      }
+    }
+    // Team allocations
+    const teams = {};
+    teamHeaders.forEach((th, i) => {
+      const cell = ws[XLSX.utils.encode_cell({r, c: TEAM_START_COL - 1 + i})];
+      if (cell && cell.v != null && cell.v !== '' && cell.v !== 0) {
+        const f = parseFloat(cell.v);
+        if (!isNaN(f) && f > 0) teams[th] = f;
+      }
+    });
+    proj.teams = teams;
+    proj._row = r + 1;
+    projects.push(proj);
+  }
+
+  // Read teams sheet
+  const ws2 = _findSheet(wb, ['Teams Capacity', 'Teams', 'Capacity']);
+  const teamList = [];
+  if (ws2) {
+    const r2 = XLSX.utils.decode_range(ws2['!ref'] || 'A1');
+    for (let r = 1; r <= r2.e.r; r++) {
+      const nameCell = ws2[XLSX.utils.encode_cell({r, c: 0})];
+      if (!nameCell || !nameCell.v) continue;
+      const mapCell = ws2[XLSX.utils.encode_cell({r, c: 1})];
+      const capCell = ws2[XLSX.utils.encode_cell({r, c: 2})];
+      teamList.push({
+        name: String(nameCell.v).trim(),
+        mapping: mapCell ? String(mapCell.v || '').trim() : '',
+        capacity: capCell ? parseFloat(capCell.v) || 0 : 0,
+      });
+    }
+  }
+
+  return { projects, teamHeaders, teams: teamList };
+}
+
+function handleExcelUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const result = parseExcelBuffer(data);
+      state.projects = result.projects;
+      state.teamHeaders = result.teamHeaders;
+      state.teams = result.teams;
+      _postLoadProcess();
+      _persistToLocalStorage();
+      toast(`Loaded ${state.projects.length} projects, ${state.teams.length} teams from ${file.name}`);
+    } catch (err) {
+      console.error(err);
+      toast('Failed to parse Excel: ' + err.message, true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
+}
+
+function _postLoadProcess() {
+  state.projects.forEach(p => {
+    if (p.riceScore == null || p.riceScore === '' || p.riceScore === 'None') {
+      const s = calcRICE(p);
+      if (s !== null) p.riceScore = s;
+    } else {
+      p.riceScore = +p.riceScore || null;
+    }
+    if (!p.moscow) p.moscow = classifyMoSCoW(p.riceScore, p);
+  });
+  calcRoadmapCategories();
+  renderAll();
+}
+
+function _persistToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      projects: state.projects,
+      teamHeaders: state.teamHeaders
+    }));
+    localStorage.setItem(STORAGE_TEAMS_KEY, JSON.stringify(state.teams));
+  } catch(e) {
+    console.warn('localStorage save failed:', e);
+  }
+}
+
+function _loadFromLocalStorage() {
+  try {
+    const pd = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const td = JSON.parse(localStorage.getItem(STORAGE_TEAMS_KEY));
+    if (pd && pd.projects && pd.projects.length) {
+      state.projects = pd.projects;
+      state.teamHeaders = pd.teamHeaders || [];
+    }
+    if (td && td.length) {
+      state.teams = td;
+    }
+    return state.projects.length > 0;
+  } catch(e) {
+    return false;
+  }
+}
+
+async function loadData() {
+  const hasLocal = _loadFromLocalStorage();
+  if (hasLocal) {
+    _postLoadProcess();
+    toast(`Loaded ${state.projects.length} projects, ${state.teams.length} teams from saved session`);
+  } else {
+    const el = document.getElementById('initialLoading');
+    if (el) el.innerHTML = `<div style="text-align:center;padding:40px">
+      <div style="font-size:2.5rem;margin-bottom:12px">📊</div>
+      <div style="font-size:1.1rem;font-weight:600;margin-bottom:8px">Welcome to CellGenius Roadmap Planner</div>
+      <div style="font-size:.85rem;color:var(--muted);max-width:450px;margin:0 auto;line-height:1.7">
+        Upload your <b>Roadmap Tracker.xlsm</b> file to get started,<br>
+        or import a previously exported JSON file.<br><br>
+        <label class="btn btn-primary" style="cursor:pointer;font-size:1rem;padding:10px 28px">📂 Upload Excel File<input type="file" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleExcelUpload(event)"></label>
+        <br><br>
+        <label class="btn btn-outline" style="cursor:pointer">📥 Or import JSON<input type="file" accept=".json" style="display:none" onchange="handleJSONImport(event)"></label>
+      </div>
+    </div>`;
+    renderAll();
+  }
+}
+
+function refreshData() {
+  loadData();
+}
+
+function exportToExcel() {
+  if (!state.projects.length) { toast('No data to export', true); return; }
+  const wb = XLSX.utils.book_new();
+
+  // Build projects sheet
+  const colKeys = Object.keys(COL_MAP);
+  const headers = [...colKeys, ...state.teamHeaders];
+  const rows = [headers];
+  state.projects.forEach(p => {
+    const row = colKeys.map(k => p[k] ?? null);
+    state.teamHeaders.forEach(th => row.push(p.teams && p.teams[th] ? p.teams[th] : null));
+    rows.push(row);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Project Details');
+
+  // Build teams sheet
+  if (state.teams.length) {
+    const tRows = [['Team Name', 'Mapping', 'Capacity']];
+    state.teams.forEach(t => tRows.push([t.name, t.mapping || '', t.capacity || 0]));
+    const ws2 = XLSX.utils.aoa_to_sheet(tRows);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Teams Capacity');
+  }
+
+  XLSX.writeFile(wb, `Roadmap_Export_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Exported to Excel ✓');
+}
+
+function exportJSON() {
+  const data = {
+    projects: state.projects,
+    teamHeaders: state.teamHeaders,
+    teams: state.teams,
+    exportDate: new Date().toISOString(),
+    version: '2.0-web'
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Roadmap_Data_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Exported JSON ✓');
+}
+
+function handleJSONImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.projects || !Array.isArray(data.projects)) throw new Error('Invalid JSON: missing projects array');
+      state.projects = data.projects;
+      state.teamHeaders = data.teamHeaders || [];
+      state.teams = data.teams || [];
+      _postLoadProcess();
+      _persistToLocalStorage();
+      toast(`Imported ${state.projects.length} projects from JSON`);
+    } catch(err) {
+      console.error(err);
+      toast('Failed to import JSON: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════════ */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+function toast(msg, isErr) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function fmt(v) { return v != null && v !== '' && v !== 'None' ? v : '—'; }
+function fmtScore(v) { return v != null && v !== '' ? (+v).toFixed(1) : '—'; }
+
+function statusBadge(s) {
+  if (s === 'Active') return '<span class="badge badge-active">Active</span>';
+  return '<span class="badge badge-pipeline">Pipeline</span>';
+}
+function moscowBadge(m) {
+  if (!m) return '—';
+  const cls = m === 'Must Have' ? 'must' : m === 'Should Have' ? 'should' : m === 'Could Have' ? 'could' : 'wont';
+  return `<span class="badge badge-${cls}">${m}</span>`;
+}
+function bucketBadge(b) {
+  if (!b) return '—';
+  const cls = b.toLowerCase();
+  return `<span class="badge badge-${cls}">${b}</span>`;
+}
+
+function populateDropdowns() {
+  const divs = [...new Set(state.projects.map(p => p.division).filter(Boolean))].sort();
+  const covs = [...new Set(state.projects.map(p => p.coverage).filter(Boolean))].sort();
+  const sigs = [...new Set(state.projects.map(p => p.significance).filter(Boolean))].sort();
+  const themes = [...new Set(state.projects.map(p => p.theme).filter(Boolean))].sort();
+
+  fillSelect('#filterDivision', divs);
+  fillSelect('#filterCoverage', covs);
+  fillSelect('#filterSignificance', sigs);
+  fillSelect('#roadmapDivision', divs);
+  fillSelect('#roadmapCoverage', covs);
+}
+
+function fillSelect(sel, opts) {
+  const el = $(sel);
+  const first = el.options[0];
+  el.innerHTML = '';
+  el.appendChild(first);
+  opts.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    el.appendChild(opt);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER ALL
+   ══════════════════════════════════════════════════════════════ */
+const _tabRendered = {editor:false, config:false, analytics:false, gantt:false, roadmap:false};
+
+function renderAll() {
+  updateStats();
+  populateDropdowns();
+  filterProjects();      // renders editor table (active tab)
+  _tabRendered.editor = true;
+  $('#headerMeta').textContent = `${state.projects.length} projects · ${state.teams.length} IT teams · Web Edition`;
+  // Auto-persist to localStorage on every render
+  if (state.projects.length > 0) _persistToLocalStorage();
+  // Other tabs rendered lazily on first click
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STATS BAR
+   ══════════════════════════════════════════════════════════════ */
+function updateStats() {
+  const p = state.projects;
+  const active = p.filter(x => x.status === 'Active').length;
+  const pipeline = p.filter(x => x.status === 'Pipeline').length;
+  const nowCount = p.filter(x => x.bucket === 'NOW').length;
+  const nextCount = p.filter(x => x.bucket === 'NEXT').length;
+  const futureCount = p.filter(x => x.bucket === 'FUTURE').length;
+  const gf = state.globalFilter;
+
+  function ac(filter, base) {
+    return 'stat ' + base + ' clickable' + (gf === filter ? ' active-filter' : '');
+  }
+
+  $('#statsBar').innerHTML = `
+    <div class="${ac('ALL','blue')}" onclick="setGlobalFilter('ALL')"><span class="val">${p.length}</span><span class="lbl">Total</span></div>
+    <div class="${ac('Active','green')}" onclick="setGlobalFilter('Active')"><span class="val">${active}</span><span class="lbl">Active</span></div>
+    <div class="${ac('Pipeline','orange')}" onclick="setGlobalFilter('Pipeline')"><span class="val">${pipeline}</span><span class="lbl">Pipeline</span></div>
+    <div class="${ac('NOW','green')}" onclick="setGlobalFilter('NOW')"><span class="val">${nowCount}</span><span class="lbl">🟢 NOW</span></div>
+    <div class="${ac('NEXT','cyan')}" onclick="setGlobalFilter('NEXT')"><span class="val">${nextCount}</span><span class="lbl">🔵 NEXT</span></div>
+    <div class="${ac('FUTURE','purple')}" onclick="setGlobalFilter('FUTURE')"><span class="val">${futureCount}</span><span class="lbl">🟣 FUTURE</span></div>
+  `;
+}
+
+/** Toggle global filter from stats bar — click again to clear */
+function setGlobalFilter(val) {
+  if (val === 'ALL' || state.globalFilter === val) {
+    state.globalFilter = null;
+  } else {
+    state.globalFilter = val;
+  }
+  updateStats();
+  // Re-render current active tab
+  const activeTab = document.querySelector('.tab.active')?.dataset.tab;
+  _tabRendered.editor = false; _tabRendered.config = false;
+  _tabRendered.analytics = false; _tabRendered.gantt = false; _tabRendered.roadmap = false;
+  if (activeTab === 'editor') filterProjects();
+  else if (activeTab === 'config') { renderConfig(); _tabRendered.config = true; }
+  else if (activeTab === 'analytics') renderAnalytics();
+  else if (activeTab === 'gantt') renderGantt();
+  else if (activeTab === 'roadmap') renderRoadmap();
+}
+
+/** Update global capacity limit from header input */
+function updateCapacityLimit(val) {
+  state.globalCapacityLimit = Math.max(50, Math.min(300, +val || 120));
+  document.getElementById('globalCapLimit').value = state.globalCapacityLimit;
+  calcRoadmapCategories();
+  _tabRendered.config = false; _tabRendered.analytics = false;
+  _tabRendered.gantt = false; _tabRendered.roadmap = false;
+  renderAll();
+  toast(`Capacity limit set to ${state.globalCapacityLimit}%`);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EDITOR TABLE
+   ══════════════════════════════════════════════════════════════ */
+function filterProjects() {
+  const q = ($('#searchInput').value || '').toLowerCase();
+  const fs = $('#filterStatus').value;
+  const fd = $('#filterDivision').value;
+  const fc = $('#filterCoverage').value;
+  const fi = $('#filterSignificance').value;
+  const fm = $('#filterMoscow').value;
+  const fb = $('#filterBucket').value;
+
+  state.filtered = state.projects.filter(p => {
+    // Global filter from stats bar
+    if (state.globalFilter === 'Active' && p.status !== 'Active') return false;
+    if (state.globalFilter === 'Pipeline' && p.status !== 'Pipeline') return false;
+    if (state.globalFilter === 'NOW' && p.bucket !== 'NOW') return false;
+    if (state.globalFilter === 'NEXT' && p.bucket !== 'NEXT') return false;
+    if (state.globalFilter === 'FUTURE' && p.bucket !== 'FUTURE') return false;
+    if (q && !matchesSearch(p, q)) return false;
+    if (fs && p.status !== fs) return false;
+    if (fd && p.division !== fd) return false;
+    if (fc && p.coverage !== fc) return false;
+    if (fi && p.significance !== fi) return false;
+    if (fm && p.moscow !== fm) return false;
+    if (fb && p.bucket !== fb) return false;
+    return true;
+  });
+
+  if (state.sortCol) {
+    state.filtered.sort((a, b) => {
+      let va = a[state.sortCol], vb = b[state.sortCol];
+      if (state.sortCol === 'riceScore') { va = +va || 0; vb = +vb || 0; }
+      if (va == null) va = '';
+      if (vb == null) vb = '';
+      if (va < vb) return -state.sortDir;
+      if (va > vb) return state.sortDir;
+      return 0;
+    });
+  }
+
+  state.page = 1;
+  renderTable();
+}
+
+function sortBy(col) {
+  if (state.sortCol === col) state.sortDir *= -1;
+  else { state.sortCol = col; state.sortDir = 1; }
+  filterProjects();
+}
+
+function renderTable() {
+  const data = state.filtered;
+  const ps = state.pageSize >= 500 ? data.length : state.pageSize;
+  const totalPages = Math.ceil(data.length / ps) || 1;
+  if (state.page > totalPages) state.page = totalPages;
+  const start = (state.page - 1) * ps;
+  const page = data.slice(start, start + ps);
+
+  $('#filterCount').textContent = `${data.length} of ${state.projects.length} projects`;
+
+  const cols = [
+    {key:'title',label:'Project Title',w:'250px'},
+    {key:'status',label:'Status'},
+    {key:'division',label:'Division'},
+    {key:'coverage',label:'Coverage'},
+    {key:'significance',label:'Significance'},
+    {key:'theme',label:'Theme',w:'160px'},
+    {key:'riceScore',label:'RICE'},
+    {key:'moscow',label:'MoSCoW'},
+    {key:'bucket',label:'Bucket'},
+    {key:'startDate',label:'Start'},
+    {key:'endDate',label:'End'},
+    {key:'duration',label:'Dur.(mo)'},
+  ];
+
+  let html = '<table><thead><tr><th style="width:36px">#</th>';
+  cols.forEach(c => {
+    const sc = state.sortCol === c.key ? (state.sortDir > 0 ? ' sorted-asc' : ' sorted-desc') : '';
+    html += `<th class="${sc}" style="${c.w?'min-width:'+c.w:''}" onclick="sortBy('${c.key}')">${c.label}</th>`;
+  });
+  html += '<th>Actions</th></tr></thead><tbody>';
+
+  page.forEach((p, i) => {
+    const idx = state.projects.indexOf(p);
+    html += `<tr>`;
+    html += `<td style="color:var(--muted)">${start+i+1}</td>`;
+    html += `<td title="${esc(p.title||'')}" style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${esc(p.title||'')}</td>`;
+    html += `<td>${statusBadge(p.status)}</td>`;
+    html += `<td>${fmt(p.division)}</td>`;
+    html += `<td>${fmt(p.coverage)}</td>`;
+    html += `<td>${fmt(p.significance)}</td>`;
+    html += `<td title="${esc(p.theme||'')}" style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${fmt(p.theme)}</td>`;
+    html += `<td style="font-weight:700;color:${riceColor(p.riceScore)}">${fmtScore(p.riceScore)}</td>`;
+    html += `<td>${moscowBadge(p.moscow)}</td>`;
+    html += `<td>${bucketBadge(p.bucket)}</td>`;
+    html += `<td>${fmt(p.startDate)}</td>`;
+    html += `<td>${fmt(p.endDate)}</td>`;
+    html += `<td>${p.duration ? p.duration + 'mo' : ''}</td>`;
+    html += `<td><button class="btn-icon" onclick="openEdit(${idx})" title="Edit">✏️</button></td>`;
+    html += `</tr>`;
+  });
+
+  html += '</tbody></table>';
+  $('#projectTable').innerHTML = html;
+
+  // Pagination
+  let pg = '<button onclick="state.page=1;renderTable()" '+(state.page<=1?'disabled':'')+'>«</button>';
+  pg += '<button onclick="state.page--;renderTable()" '+(state.page<=1?'disabled':'')+'>‹</button>';
+  const lo = Math.max(1, state.page-3), hi = Math.min(totalPages, state.page+3);
+  for (let i=lo; i<=hi; i++) {
+    pg += `<button class="${i===state.page?'active':''}" onclick="state.page=${i};renderTable()">${i}</button>`;
+  }
+  pg += `<span>of ${totalPages}</span>`;
+  pg += '<button onclick="state.page++;renderTable()" '+(state.page>=totalPages?'disabled':'')+'>›</button>';
+  pg += '<button onclick="state.page='+totalPages+';renderTable()" '+(state.page>=totalPages?'disabled':'')+'>»</button>';
+  $('#pagination').innerHTML = pg;
+}
+
+function riceColor(v) {
+  if (v == null) return 'var(--muted)';
+  v = +v;
+  if (v >= 7) return 'var(--red)';
+  if (v >= 4) return 'var(--orange)';
+  if (v >= 2) return 'var(--yellow)';
+  return 'var(--muted)';
+}
+
+function esc(s) { return s ? s.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+
+/* ══════════════════════════════════════════════════════════════
+   EDIT MODAL
+   ══════════════════════════════════════════════════════════════ */
+function openEdit(idx) {
+  state.editIdx = idx;
+  const p = state.projects[idx];
+  const themes = [...new Set(state.projects.map(x=>x.theme).filter(Boolean))].sort();
+
+  let html = `
+    <div class="form-grid full"><label>Title</label><input id="m_title" value="${esc(p.title||'')}"></div>
+    <div><label>Status</label><select id="m_status">${STATUSES.map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div><label>Nature</label><select id="m_nature"><option value="">—</option>${NATURES.map(n=>`<option ${p.nature===n?'selected':''}>${n}</option>`).join('')}</select></div>
+    <div><label>Coverage</label><select id="m_coverage">${COVERAGES.map(c=>`<option ${p.coverage===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div><label>Significance</label><select id="m_significance"><option value="">—</option>${SIGNIFICANCES.map(s=>`<option ${p.significance===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="form-grid full"><label>Division</label><input id="m_division" value="${esc(p.division||'')}"></div>
+    <div class="form-grid full"><label>Theme</label><input id="m_theme" value="${esc(p.theme||'')}" list="themeList">
+      <datalist id="themeList">${themes.map(t=>`<option value="${esc(t)}">`).join('')}</datalist></div>
+    <div><label>Start Date</label><input type="date" id="m_start" value="${p.startDate||''}"></div>
+    <div><label>End Date</label><input type="date" id="m_end" value="${p.endDate||''}"></div>
+    <div><label>RICE Reach</label><select id="m_reach"><option value="">—</option>${Object.keys(RICE_REACH).map(k=>`<option ${p.reach===k?'selected':''}>${k}</option>`).join('')}</select></div>
+    <div><label>RICE Impact</label><select id="m_impact"><option value="">—</option>${Object.keys(RICE_IMPACT).map(k=>`<option ${p.impact===k?'selected':''}>${k}</option>`).join('')}</select></div>
+    <div><label>RICE Confidence</label><select id="m_confidence"><option value="">—</option>${Object.keys(RICE_CONF).map(k=>`<option ${p.confidence===k?'selected':''}>${k}</option>`).join('')}</select></div>
+    <div><label>RICE Effort</label><select id="m_effort"><option value="">—</option>${Object.keys(RICE_EFFORT).map(k=>`<option ${p.effort===k?'selected':''}>${k}</option>`).join('')}</select></div>
+    <div><label>Strategic Weight</label><input type="number" id="m_stratWeight" value="${p.stratWeight||1}" min="0.5" max="5" step="0.5"></div>
+    <div><label>RICE Score (auto)</label><input id="m_riceScore" value="${fmtScore(p.riceScore)}" readonly style="opacity:.7"></div>
+  `;
+
+  $('#modalForm').innerHTML = html;
+  $('#modalTitle').textContent = `Edit: ${(p.title||'').substring(0,60)}`;
+  // Reset to Details tab
+  switchModalTab('details');
+  // Build Teams tab
+  renderModalTeams(p);
+  $('#editModal').classList.add('active');
+
+  // live RICE recalc
+  ['m_reach','m_impact','m_confidence','m_effort','m_stratWeight'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => {
+      const s = calcRICE({
+        reach: $('#m_reach').value, impact: $('#m_impact').value,
+        confidence: $('#m_confidence').value, effort: $('#m_effort').value,
+        stratWeight: +$('#m_stratWeight').value
+      });
+      $('#m_riceScore').value = s != null ? s.toFixed(1) : '—';
+    });
+  });
+}
+
+function switchModalTab(tabId) {
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.toggle('active', t.dataset.mtab === tabId));
+  document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.toggle('active', c.id === 'mtab-' + tabId));
+}
+
+/** Compute team count & total FTE for a project, filtered to valid state.teams only */
+function getProjectTeamStats(p) {
+  const allocs = p.teams || {};
+  const validNames = new Set(state.teams.map(t => t.name));
+  let totalFTE = 0, teamCount = 0;
+  const teamList = [];
+  for (const [k, v] of Object.entries(allocs)) {
+    if (validNames.has(k) && v > 0) { totalFTE += v; teamCount++; teamList.push({ name: k, fte: v }); }
+  }
+  return { teamCount, totalFTE, teamList };
+}
+
+function renderModalTeams(p) {
+  const teams = state.teams;
+  if (!teams.length) {
+    $('#modalTeamsContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:1.5rem;margin-bottom:8px">👥</div><div style="font-size:.82rem">No teams configured yet.<br>Add teams in the <b>Config</b> tab first.</div></div>';
+    return;
+  }
+  const allocs = p.teams || {};
+  // Only count teams that exist in state.teams (ignore orphaned/stale keys)
+  const validTeamNames = new Set(teams.map(t => t.name));
+  let totalFTE = 0, teamCount = 0;
+  for (const [k, v] of Object.entries(allocs)) {
+    if (validTeamNames.has(k) && v > 0) { totalFTE += v; teamCount++; }
+  }
+
+  let html = `<div class="team-alloc-summary">
+    <div class="tas-item">Teams assigned: <b>${teamCount}</b> of ${teams.length}</div>
+    <div class="tas-item">Total FTE required: <b>${totalFTE.toFixed(1)}</b></div>
+  </div>`;
+  html += '<div class="team-alloc-grid">';
+  teams.forEach((t, i) => {
+    const val = allocs[t.name] || 0;
+    const maxSlider = Math.max(t.capacity * 2, 10);
+    const isOver = t.capacity > 0 && val > t.capacity;
+    html += `<div class="team-alloc-row${isOver ? ' over-cap' : ''}" id="taRow_${i}">
+      <div>
+        <div class="ta-name" title="${esc(t.name)}">${esc(t.name)}</div>
+        <div class="ta-cap">${t.capacity} FTE capacity</div>
+      </div>
+      <div>
+        <input type="number" class="ta-input" id="taNum_${i}" data-team="${esc(t.name)}" value="${val}" min="0" max="${maxSlider}" step="0.01"
+          style="width:70px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 6px;border-radius:6px;font-size:.82rem;text-align:center"
+          oninput="syncTeamSlider(${i})">
+      </div>
+      <div>
+        <input type="range" id="taSlider_${i}" value="${val}" min="0" max="${maxSlider}" step="0.01" oninput="syncTeamNum(${i})">
+      </div>
+      <div class="ta-val" id="taVal_${i}">${val > 0 ? val.toFixed(2) : '—'}</div>
+    </div>`;
+  });
+  html += '</div>';
+  $('#modalTeamsContent').innerHTML = html;
+}
+
+function syncTeamSlider(i) {
+  const num = document.getElementById('taNum_' + i);
+  const slider = document.getElementById('taSlider_' + i);
+  const valEl = document.getElementById('taVal_' + i);
+  const row = document.getElementById('taRow_' + i);
+  if (!num || !slider) return;
+  const v = Math.max(0, +num.value || 0);
+  slider.value = v;
+  valEl.textContent = v > 0 ? v.toFixed(2) : '—';
+  // Check over-capacity
+  const tName = num.dataset.team;
+  const team = state.teams.find(t => t.name === tName);
+  row.classList.toggle('over-cap', team && team.capacity > 0 && v > team.capacity);
+  valEl.style.color = (team && team.capacity > 0 && v > team.capacity) ? 'var(--red)' : 'var(--accent)';
+  _updateModalTeamSummary();
+}
+
+function syncTeamNum(i) {
+  const num = document.getElementById('taNum_' + i);
+  const slider = document.getElementById('taSlider_' + i);
+  const valEl = document.getElementById('taVal_' + i);
+  const row = document.getElementById('taRow_' + i);
+  if (!num || !slider) return;
+  const v = Math.max(0, +slider.value || 0);
+  num.value = v;
+  valEl.textContent = v > 0 ? v.toFixed(2) : '—';
+  const tName = num.dataset.team;
+  const team = state.teams.find(t => t.name === tName);
+  row.classList.toggle('over-cap', team && team.capacity > 0 && v > team.capacity);
+  valEl.style.color = (team && team.capacity > 0 && v > team.capacity) ? 'var(--red)' : 'var(--accent)';
+  _updateModalTeamSummary();
+}
+
+function _updateModalTeamSummary() {
+  const summary = document.querySelector('.team-alloc-summary');
+  if (!summary) return;
+  let totalFTE = 0, teamCount = 0;
+  state.teams.forEach((t, i) => {
+    const num = document.getElementById('taNum_' + i);
+    const v = num ? +num.value || 0 : 0;
+    if (v > 0) { totalFTE += v; teamCount++; }
+  });
+  summary.innerHTML = `<div class="tas-item">Teams assigned: <b>${teamCount}</b> of ${state.teams.length}</div>
+    <div class="tas-item">Total FTE required: <b>${totalFTE.toFixed(1)}</b></div>`;
+}
+
+function closeModal() { $('#editModal').classList.remove('active'); }
+
+function saveModal() {
+  const p = state.projects[state.editIdx];
+  p.title = $('#m_title').value;
+  p.status = $('#m_status').value;
+  p.nature = $('#m_nature').value || null;
+  p.coverage = $('#m_coverage').value;
+  p.significance = $('#m_significance').value || null;
+  p.division = $('#m_division').value || null;
+  p.theme = $('#m_theme').value || null;
+  p.startDate = $('#m_start').value || null;
+  p.endDate = $('#m_end').value || null;
+  p.reach = $('#m_reach').value || null;
+  p.impact = $('#m_impact').value || null;
+  p.confidence = $('#m_confidence').value || null;
+  p.effort = $('#m_effort').value || null;
+  p.stratWeight = +$('#m_stratWeight').value || 1;
+
+  // Save team allocations from Teams tab
+  const teamAllocs = {};
+  state.teams.forEach((t, i) => {
+    const num = document.getElementById('taNum_' + i);
+    const v = num ? +num.value || 0 : 0;
+    if (v > 0) teamAllocs[t.name] = v;
+  });
+  p.teams = teamAllocs;
+
+  const score = calcRICE(p);
+  if (score !== null) p.riceScore = score;
+  p.moscow = classifyMoSCoW(p.riceScore, p);
+  calcRoadmapCategories();
+
+  closeModal();
+  renderAll();
+  toast('Project updated ✓');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CONFIG TAB
+   ══════════════════════════════════════════════════════════════ */
+function renderConfig() {
+  const grid = $('#teamCapGrid');
+  grid.innerHTML = state.teams.map((t, idx) => {
+    const peak = calcTeamPeak6mo(t.name);
+    const pct = t.capacity > 0 ? peak.pct : 0;
+    const color = pct > 120 ? 'var(--red)' : pct > 80 ? 'var(--orange)' : 'var(--green)';
+    return `<div class="team-card" style="position:relative">
+      <button class="btn-icon" style="position:absolute;top:4px;right:4px;font-size:.75rem;color:var(--red)" onclick="removeTeam(${idx})" title="Remove team">✕</button>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+        <input type="text" value="${esc(t.name)}" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:.72rem;font-weight:600;flex:1;min-width:0" onchange="updateTeamName(${idx},this.value)">
+      </div>
+      <div class="tc-bar"><div class="tc-fill" style="width:${Math.min(100,pct)}%;background:${color}"></div></div>
+      <div class="tc-info" style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+        <span style="font-size:.7rem">${pct.toFixed(0)}% peak (6mo)</span>
+        <span style="display:flex;align-items:center;gap:3px"><input type="number" value="${t.capacity}" min="0" step="0.5" style="width:50px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:2px 4px;border-radius:4px;font-size:.72rem;text-align:center" onchange="updateTeamCapacity(${idx},+this.value)"> FTE</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function calcTeamPeak6mo(teamName) {
+  const team = state.teams.find(t => t.name === teamName);
+  if (!team || team.capacity <= 0) return { pct: 0, peakMonth: '' };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const m0 = new Date(today.getFullYear(), today.getMonth(), 1);
+  const included = state.projects.filter(p => p.startDate && p.endDate);
+  let peakLoad = 0, peakMonth = '';
+  for (let i = 0; i < 6; i++) {
+    const ms = new Date(m0); ms.setMonth(ms.getMonth() + i);
+    const me = new Date(ms); me.setMonth(me.getMonth() + 1); me.setDate(0);
+    let load = 0;
+    included.forEach(p => {
+      const ps = new Date(p.startDate), pe = new Date(p.endDate);
+      if (ps <= me && pe >= ms && p.teams && p.teams[teamName]) load += p.teams[teamName];
+    });
+    if (load > peakLoad) { peakLoad = load; peakMonth = ms.toISOString().slice(0,7); }
+  }
+  return { pct: (peakLoad / team.capacity) * 100, peakMonth };
+}
+
+function updateTeamCapacity(idx, value) {
+  if (idx >= 0 && idx < state.teams.length) {
+    state.teams[idx].capacity = Math.max(0, value);
+    _tabRendered.config = false; _tabRendered.analytics = false; _tabRendered.gantt = false;
+    renderConfig();
+    toast(`Updated ${state.teams[idx].name} capacity to ${value} FTE`);
+  }
+}
+
+function updateTeamName(idx, newName) {
+  if (idx >= 0 && idx < state.teams.length && newName.trim()) {
+    const oldName = state.teams[idx].name;
+    state.teams[idx].name = newName.trim();
+    // Update project team references
+    state.projects.forEach(p => {
+      if (p.teams && p.teams[oldName] !== undefined) {
+        p.teams[newName.trim()] = p.teams[oldName];
+        delete p.teams[oldName];
+      }
+    });
+    _tabRendered.config = false; _tabRendered.analytics = false; _tabRendered.gantt = false;
+    renderConfig();
+    toast(`Renamed team to ${newName.trim()}`);
+  }
+}
+
+function removeTeam(idx) {
+  if (idx >= 0 && idx < state.teams.length) {
+    const name = state.teams[idx].name;
+    if (!confirm(`Remove team "${name}"? Project allocations to this team will remain in data.`)) return;
+    state.teams.splice(idx, 1);
+    _tabRendered.config = false; _tabRendered.analytics = false; _tabRendered.gantt = false;
+    renderConfig();
+    toast(`Removed team: ${name}`);
+  }
+}
+
+function addTeam() {
+  const name = prompt('Enter new team name:');
+  if (!name || !name.trim()) return;
+  const cap = +prompt('Enter FTE capacity:', '5') || 5;
+  state.teams.push({ name: name.trim(), capacity: cap });
+  _tabRendered.config = false;
+  renderConfig();
+  toast(`Added team: ${name.trim()} (${cap} FTE)`);
+}
+
+function calcTeamLoad(teamName) {
+  return state.projects.reduce((sum, p) => {
+    return sum + ((p.teams && p.teams[teamName]) || 0);
+  }, 0);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ANALYTICS
+   ══════════════════════════════════════════════════════════════ */
+function renderAnalytics() {
+  let p = state.projects;
+  // Apply global filter
+  if (state.globalFilter === 'Active') p = p.filter(x => x.status === 'Active');
+  else if (state.globalFilter === 'Pipeline') p = p.filter(x => x.status === 'Pipeline');
+  else if (state.globalFilter === 'NOW') p = p.filter(x => x.bucket === 'NOW');
+  else if (state.globalFilter === 'NEXT') p = p.filter(x => x.bucket === 'NEXT');
+  else if (state.globalFilter === 'FUTURE') p = p.filter(x => x.bucket === 'FUTURE');
+
+  // Destroy old charts
+  Object.values(state.charts).forEach(c => c.destroy && c.destroy());
+  state.charts = {};
+
+  const grid = $('#chartGrid');
+  // Build significance & coverage boxes HTML first
+  const sigOrder = ['Regulatory','No Choice','Strategic','Customer Centricity','Mandate','Other'];
+  const covOrder = ['Group','NBB','BisB','KSA','UAE'];
+  const sigBoxes = buildCategoryBoxes(p, 'significance', '🎯 By Significance', sigOrder);
+  const covBoxes = buildCategoryBoxes(p, 'coverage', '🌍 By Coverage', covOrder);
+
+  grid.innerHTML = `
+    <div class="chart-card"><h4>📊 Status Distribution</h4><canvas id="ch1"></canvas></div>
+    <div class="chart-card"><h4>🪣 NOW / NEXT / FUTURE</h4><canvas id="ch8"></canvas></div>
+    <div class="chart-card"><h4>🏢 By Division (Top 10)</h4><canvas id="ch2"></canvas></div>
+    <div class="chart-card"><h4> By Theme (Top 10)</h4><canvas id="ch7"></canvas></div>
+    ${sigBoxes}
+    ${covBoxes}
+  `;
+
+  const chartOpts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b8fa3',font:{size:11}}}}};
+  const doughnutOpts = {...chartOpts,cutout:'50%'};
+  const barOpts = {...chartOpts,scales:{x:{ticks:{color:'#8b8fa3',font:{size:10}},grid:{color:'rgba(45,50,80,.3)'}},y:{ticks:{color:'#8b8fa3'},grid:{color:'rgba(45,50,80,.3)'}}}};
+
+  // 1. Status
+  const statusCounts = countBy(p, 'status');
+  state.charts.ch1 = new Chart($('#ch1'), {type:'doughnut',data:{
+    labels:Object.keys(statusCounts),datasets:[{data:Object.values(statusCounts),backgroundColor:['#2dd4a8','#4f8cff']}]
+  },options:doughnutOpts});
+
+  // 8. Buckets (moved to top row)
+  const bCounts = {'NOW':0,'NEXT':0,'FUTURE':0};
+  p.forEach(x => { if(bCounts[x.bucket]!==undefined) bCounts[x.bucket]++; });
+  state.charts.ch8 = new Chart($('#ch8'), {type:'doughnut',data:{
+    labels:Object.keys(bCounts),datasets:[{data:Object.values(bCounts),backgroundColor:['#2dd4a8','#4f8cff','#7c5cfc']}]
+  },options:doughnutOpts});
+
+  // 2. Division
+  const divCounts = countBy(p, 'division');
+  const topDivs = Object.entries(divCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  state.charts.ch2 = new Chart($('#ch2'), {type:'bar',data:{
+    labels:topDivs.map(d=>d[0]?.substring(0,20)),datasets:[{label:'Projects',data:topDivs.map(d=>d[1]),backgroundColor:'#4f8cff'}]
+  },options:barOpts});
+
+  // 7. Theme
+  const themeCounts = countBy(p, 'theme');
+  const topThemes = Object.entries(themeCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  state.charts.ch7 = new Chart($('#ch7'), {type:'bar',data:{
+    labels:topThemes.map(t=>t[0]?.substring(0,22)),datasets:[{label:'Projects',data:topThemes.map(t=>t[1]),backgroundColor:'#7c5cfc'}]
+  },options:barOpts});
+
+  // Top 20 table
+  const top20 = [...p].filter(x=>x.riceScore!=null).sort((a,b)=>(b.riceScore||0)-(a.riceScore||0)).slice(0,20);
+  let thtml = '<table><thead><tr><th>#</th><th>Title</th><th>RICE</th><th>MoSCoW</th><th>Status</th><th>Division</th><th>Significance</th></tr></thead><tbody>';
+  top20.forEach((x,i) => {
+    thtml += `<tr><td>${i+1}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis">${esc(x.title)}</td>
+      <td style="font-weight:700;color:${riceColor(x.riceScore)}">${fmtScore(x.riceScore)}</td>
+      <td>${moscowBadge(x.moscow)}</td><td>${statusBadge(x.status)}</td>
+      <td>${fmt(x.division)}</td><td>${fmt(x.significance)}</td></tr>`;
+  });
+  thtml += '</tbody></table>';
+  $('#topProjectsTable').innerHTML = thtml;
+
+  // Capacity analysis
+  renderCapacityAnalysis();
+}
+
+function countBy(arr, key) {
+  const m = {};
+  arr.forEach(x => { const v = x[key] || 'N/A'; m[v] = (m[v]||0)+1; });
+  return m;
+}
+
+function buildCategoryBoxes(projects, field, title, customOrder) {
+  const categories = {};
+  projects.forEach(p => {
+    const val = p[field] || 'N/A';
+    if (!categories[val]) categories[val] = { NOW: 0, NEXT: 0, FUTURE: 0, total: 0 };
+    categories[val].total++;
+    if (p.bucket === 'NOW') categories[val].NOW++;
+    else if (p.bucket === 'NEXT') categories[val].NEXT++;
+    else categories[val].FUTURE++;
+  });
+  let sorted;
+  if (customOrder) {
+    sorted = Object.entries(categories).sort((a, b) => {
+      const idxA = customOrder.findIndex(o => a[0].toLowerCase().startsWith(o.toLowerCase()));
+      const idxB = customOrder.findIndex(o => b[0].toLowerCase().startsWith(o.toLowerCase()));
+      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+    });
+  } else {
+    sorted = Object.entries(categories).sort((a,b) => b[1].total - a[1].total);
+  }
+  let html = `<div class="chart-card" style="grid-column:span 2"><h4>${title}</h4><div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px 0">`;
+  sorted.forEach(([name, c]) => {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-width:140px;flex:1">`;
+    html += `<div style="font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:6px">${esc(name)}</div>`;
+    html += `<div style="font-size:1.1rem;font-weight:700;color:var(--muted);margin-bottom:6px">${c.total} projects</div>`;
+    html += `<div style="display:flex;gap:8px;font-size:.68rem">`;
+    html += `<span style="color:var(--green)">NOW ${c.NOW}</span>`;
+    html += `<span style="color:var(--accent)">NEXT ${c.NEXT}</span>`;
+    html += `<span style="color:var(--accent2)">FUTURE ${c.FUTURE}</span>`;
+    html += `</div></div>`;
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function renderCapacityAnalysis() {
+  // Show MAX capacity load & % for next 18 months per team
+  const teams = state.teams.filter(t => t.capacity > 0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const m0 = new Date(today.getFullYear(), today.getMonth(), 1);
+  const months = [];
+  for (let i = 0; i < 18; i++) {
+    const ms = new Date(m0); ms.setMonth(ms.getMonth() + i);
+    const me = new Date(ms); me.setMonth(me.getMonth() + 1); me.setDate(0);
+    months.push({ start: ms, end: me, key: ms.toISOString().slice(0,7) });
+  }
+  const included = state.projects.filter(p => p.startDate && p.endDate);
+
+  let html = '<div class="team-grid">';
+  teams.forEach(t => {
+    let peakLoad = 0, peakMonth = '';
+    months.forEach(m => {
+      let load = 0;
+      included.forEach(p => {
+        const ps = new Date(p.startDate), pe = new Date(p.endDate);
+        if (ps <= m.end && pe >= m.start && p.teams && p.teams[t.name]) load += p.teams[t.name];
+      });
+      if (load > peakLoad) { peakLoad = load; peakMonth = m.key; }
+    });
+    const pct = t.capacity > 0 ? (peakLoad / t.capacity) * 100 : 0;
+    const color = pct > 120 ? 'var(--red)' : pct > 80 ? 'var(--orange)' : pct > 50 ? 'var(--yellow)' : 'var(--green)';
+    html += `<div class="team-card">
+      <div class="tc-name">${esc(t.name)}</div>
+      <div class="tc-bar"><div class="tc-fill" style="width:${Math.min(100,pct)}%;background:${color}"></div></div>
+      <div class="tc-info"><span>Peak: ${peakLoad.toFixed(1)}/${t.capacity} FTE</span><span style="font-weight:700;color:${color}">${pct.toFixed(0)}%</span></div>
+      <div style="font-size:.62rem;color:var(--muted);margin-top:2px">Peak month: ${peakMonth || '—'} (18mo horizon)</div>
+    </div>`;
+  });
+  html += '</div>';
+  $('#capacityAnalysis').innerHTML = html;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GANTT CHART
+   ══════════════════════════════════════════════════════════════ */
+function renderGantt() {
+  const ganttQ = ($('#ganttSearch').value || '').toLowerCase().trim();
+  const typeFilter = $('#ganttType').value;
+  const filter = $('#ganttFilter').value;
+  const group = $('#ganttGroup').value;
+  const sort = $('#ganttSort').value;
+
+  let data = state.projects.filter(p => {
+    // Global filter from stats bar
+    if (state.globalFilter === 'Active' && p.status !== 'Active') return false;
+    if (state.globalFilter === 'Pipeline' && p.status !== 'Pipeline') return false;
+    if (state.globalFilter === 'NOW' && p.bucket !== 'NOW') return false;
+    if (state.globalFilter === 'NEXT' && p.bucket !== 'NEXT') return false;
+    if (state.globalFilter === 'FUTURE' && p.bucket !== 'FUTURE') return false;
+    // Team capacity filter from clicking over-capacity card
+    if (state.ganttTeamFilter && (!p.teams || !p.teams[state.ganttTeamFilter])) return false;
+    // Text search
+    if (ganttQ && !matchesSearch(p, ganttQ)) return false;
+    // Project type filter
+    if (typeFilter === 'tech' && !isTechProject(p)) return false;
+    if (typeFilter === 'other' && isTechProject(p)) return false;
+    // Status filter
+    if (filter === 'Active') return p.status === 'Active';
+    if (filter === 'Pipeline') return p.status === 'Pipeline';
+    if (filter === 'dated') return p.startDate && p.endDate;
+    return true;
+  });
+
+  // Separate into included (active) vs excluded (FUTURE/deactivated)
+  const included = data.filter(p => !state.excludedFromRoadmap.has(String(p.id ?? p._row)));
+  const excluded = data.filter(p => state.excludedFromRoadmap.has(String(p.id ?? p._row)));
+
+  // Sort both by start date first, then by user-chosen secondary
+  const ganttSortFn = (a, b) => {
+    const aHas = a.startDate && a.endDate, bHas = b.startDate && b.endDate;
+    if (aHas && !bHas) return -1;
+    if (!aHas && bHas) return 1;
+    const byStart = (a.startDate||'').localeCompare(b.startDate||'');
+    if (sort === 'rice') return byStart || ((b.riceScore||0) - (a.riceScore||0));
+    if (sort === 'title') return byStart || (a.title||'').localeCompare(b.title||'');
+    return byStart;
+  };
+  included.sort(ganttSortFn);
+  excluded.sort(ganttSortFn);
+  data = [...included, ...excluded];
+
+  const includedCount = included.length;
+  const excludedCount = excluded.length;
+  $('#ganttCount').textContent = `${includedCount} scheduled` + (excludedCount ? ` · ${excludedCount} not included` : '');
+
+  if (!data.length) {
+    $('#ganttContainer').innerHTML = '<div class="loading">No projects found for this filter</div>';
+    return;
+  }
+
+  // Timeline range
+  const cfgStart = new Date($('#cfgStart').value || '2026-01-01');
+  const cfgEnd = new Date($('#cfgEnd').value || '2027-06-30');
+  const months = [];
+  const d = new Date(cfgStart);
+  d.setDate(1);
+  while (d <= cfgEnd) {
+    months.push(new Date(d));
+    d.setMonth(d.getMonth() + 1);
+  }
+  const totalDays = (cfgEnd - cfgStart) / 86400000;
+  const today = new Date();
+
+  // Build HTML
+  let html = '';
+
+  // Header
+  html += '<div class="gantt-header">';
+  html += '<div class="gantt-label-col" style="padding:6px 10px;font-size:.72rem;font-weight:600;color:var(--muted);background:var(--surface)">Project</div>';
+  html += '<div class="gantt-timeline"><div class="gantt-months">';
+  months.forEach(m => {
+    html += `<div class="gantt-month">${m.toLocaleDateString('en',{month:'short',year:'2-digit'})}</div>`;
+  });
+  html += '</div></div></div>';
+
+  // Team filter banner
+  if (state.ganttTeamFilter) {
+    const tf = state.ganttTeamFilter;
+    const tInfo = state.teams.find(t => t.name === tf);
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:6px 14px;background:rgba(79,140,255,.1);border:1px solid var(--accent);border-radius:6px;margin-bottom:6px;font-size:.78rem">`;
+    html += `<span>🔍 Filtered by team: <b style="color:var(--accent)">${esc(tf)}</b>`;
+    if (tInfo) html += ` <span style="color:var(--muted)">(${tInfo.capacity} FTE capacity)</span>`;
+    html += `</span><button class="btn btn-sm btn-outline" onclick="clearGanttTeamFilter()" style="margin-left:auto;font-size:.68rem">✕ Clear Filter</button></div>`;
+  }
+
+  // Monthly Capacity Utilization Row — team-specific if filtered
+  const monthCapUtils = state.ganttTeamFilter
+    ? calcTeamMonthlyCapUtil(months, state.ganttTeamFilter)
+    : calcMonthlyCapUtil(months, cfgStart, cfgEnd);
+  const capLabel = state.ganttTeamFilter ? '🔥 ' + state.ganttTeamFilter.split(' - ')[0] + ' Cap' : '🔥 Avg Capacity';
+  html += '<div class="gantt-cap-row">';
+  html += `<div class="gantt-label-col">${capLabel}</div>`;
+  html += '<div class="gantt-timeline" style="display:flex">';
+  monthCapUtils.forEach((mc, i) => {
+    const pctDisplay = mc.pct > 0 ? mc.pct.toFixed(0) + '%' : '—';
+    html += `<div class="gantt-cap-cell"><span class="cap-pct" style="color:${mc.color}">${pctDisplay}</span><div class="cap-bar-wrap"><div class="cap-bar-fill" style="width:${Math.min(100, mc.pct)}%;background:${mc.color}"></div></div></div>`;
+  });
+  html += '</div></div>';
+
+  // Group headers + rows
+  if (group) {
+    const groupsIncluded = {};
+    const groupsExcluded = {};
+    included.forEach(p => {
+      const g = p[group] || 'Other';
+      if (!groupsIncluded[g]) groupsIncluded[g] = [];
+      groupsIncluded[g].push(p);
+    });
+    excluded.forEach(p => {
+      const g = p[group] || 'Other';
+      if (!groupsExcluded[g]) groupsExcluded[g] = [];
+      groupsExcluded[g].push(p);
+    });
+    Object.keys(groupsIncluded).sort().forEach(g => {
+      html += `<div class="gantt-row" style="background:var(--surface)"><div class="gantt-row-label" style="font-weight:700;color:var(--accent);font-size:.78rem">${esc(g)} (${groupsIncluded[g].length})</div><div class="gantt-row-bar-area"></div></div>`;
+      groupsIncluded[g].forEach(p => { html += ganttRow(p, cfgStart, totalDays, months.length); });
+    });
+    if (excluded.length) {
+      html += `<div class="gantt-row" style="background:var(--surface);border-top:2px solid var(--border)"><div class="gantt-row-label" style="font-weight:700;color:var(--accent2);font-size:.76rem">📋 Not Included — FUTURE (${excluded.length})</div><div class="gantt-row-bar-area" style="display:flex;align-items:center;padding-left:10px"><span style="font-size:.62rem;color:var(--muted);font-style:italic">Tick a project to include it in the roadmap</span></div></div>`;
+      Object.keys(groupsExcluded).sort().forEach(g => {
+        html += `<div class="gantt-row" style="background:var(--surface)"><div class="gantt-row-label" style="font-weight:600;color:var(--muted);font-size:.72rem;padding-left:16px">${esc(g)} (${groupsExcluded[g].length})</div><div class="gantt-row-bar-area"></div></div>`;
+        groupsExcluded[g].forEach(p => { html += ganttRow(p, cfgStart, totalDays, months.length); });
+      });
+    }
+  } else {
+    included.forEach(p => { html += ganttRow(p, cfgStart, totalDays, months.length); });
+    if (excluded.length) {
+      html += `<div class="gantt-row" style="background:var(--surface);border-top:2px solid var(--border)"><div class="gantt-row-label" style="font-weight:700;color:var(--accent2);font-size:.76rem">📋 Not Included — FUTURE (${excluded.length})</div><div class="gantt-row-bar-area" style="display:flex;align-items:center;padding-left:10px"><span style="font-size:.62rem;color:var(--muted);font-style:italic">Tick a project to include it in the roadmap</span></div></div>`;
+      excluded.forEach(p => { html += ganttRow(p, cfgStart, totalDays, months.length); });
+    }
+  }
+
+  // Today line
+  const todayPct = ((today - cfgStart) / 86400000) / totalDays * 100;
+
+  $('#ganttContainer').innerHTML = html;
+
+  // Add grid lines + today
+  document.querySelectorAll('.gantt-row-bar-area').forEach(area => {
+    months.forEach((m, i) => {
+      const pct = ((m - cfgStart) / 86400000) / totalDays * 100;
+      const line = document.createElement('div');
+      line.className = 'gantt-grid-line';
+      line.style.left = pct + '%';
+      area.appendChild(line);
+    });
+    if (todayPct >= 0 && todayPct <= 100) {
+      const tl = document.createElement('div');
+      tl.className = 'gantt-today';
+      tl.style.left = todayPct + '%';
+      tl.title = 'Today';
+      area.appendChild(tl);
+    }
+  });
+  renderGanttCapacity();
+}
+
+function ganttRow(p, startRef, totalDays, monthCount) {
+  // Handle projects without dates (FUTURE / not included)
+  if (!p.startDate || !p.endDate) {
+    const key = String(p.id ?? p._row);
+    const included = !state.excludedFromRoadmap.has(key);
+    const bucketBadge = p.bucket ? `<span class="badge badge-${(p.bucket||'').toLowerCase()}" style="font-size:.55rem;padding:1px 5px;margin-left:4px">${p.bucket}</span>` : '';
+    return `<div class="gantt-row" data-pid="${esc(key)}" style="opacity:${included?'1':'.35'}">
+      <div class="gantt-row-label" title="${esc(p.title)}">
+        <input type="checkbox" class="gantt-check" ${included?'checked':''} onchange="toggleGanttProject('${esc(key)}')">
+        <span style="color:var(--muted)">${esc((p.title||'').substring(0,32))}${bucketBadge}</span>
+      </div>
+      <div class="gantt-row-bar-area" style="display:flex;align-items:center;padding-left:10px">
+        <span style="font-size:.62rem;color:var(--muted);font-style:italic">${included ? 'Drag to schedule after dates are assigned' : 'Tick to include in roadmap'}</span>
+      </div>
+    </div>`;
+  }
+  const ps = new Date(p.startDate);
+  const pe = new Date(p.endDate);
+  const cfgEnd = new Date(startRef.getTime() + totalDays * 86400000);
+
+  // Clip to the visible timeline window
+  const visStart = ps < startRef ? startRef : ps;
+  const visEnd   = pe > cfgEnd   ? cfgEnd   : pe;
+
+  // If entirely outside the visible range, skip the bar
+  if (visStart >= visEnd) {
+    const key = String(p.id ?? p._row);
+    const included = !state.excludedFromRoadmap.has(key);
+    return `<div class="gantt-row" data-pid="${esc(key)}" style="opacity:${included?'1':'.35'}">
+      <div class="gantt-row-label" title="${esc(p.title)}">
+        <input type="checkbox" class="gantt-check" ${included?'checked':''} onchange="toggleGanttProject('${esc(key)}')">
+        <span style="color:var(--muted)">${esc((p.title||'').substring(0,36))}</span>
+      </div>
+      <div class="gantt-row-bar-area"></div>
+    </div>`;
+  }
+
+  const left  = ((visStart - startRef) / 86400000) / totalDays * 100;
+  const width = Math.max(0.3, ((visEnd - visStart) / 86400000) / totalDays * 100);
+  const cls = (p.status||'').toLowerCase();
+  const rice = p.riceScore != null ? ` [${(+p.riceScore).toFixed(1)}]` : '';
+  const key = String(p.id ?? p._row);
+  const included = !state.excludedFromRoadmap.has(key);
+  // Visual indicator if bar is clipped
+  const clippedLeft  = ps < startRef ? '◂ ' : '';
+  const clippedRight = pe > cfgEnd   ? ' ▸' : '';
+  // Team stats for tooltip
+  const ts = getProjectTeamStats(p);
+  const teamTip = ts.teamCount > 0 ? `\n👥 ${ts.teamCount} teams · ${ts.totalFTE.toFixed(1)} FTE` : '';
+  const teamDetailTip = ts.teamList.map(t => `  ${t.name}: ${t.fte.toFixed(2)}`).join('\n');
+  const fullTeamTip = teamTip + (teamDetailTip ? '\n' + teamDetailTip : '');
+  const teamBadge = ts.teamCount > 0 ? ` <span style="font-size:.55rem;opacity:.8;margin-left:2px">👥${ts.teamCount}</span>` : '';
+  const hlClass = state.highlightedProjectKey === key ? ' gantt-row-highlighted' : '';
+
+  return `<div class="gantt-row${hlClass}" data-pid="${esc(key)}" style="opacity:${included?'1':'.35'}" onclick="highlightGanttTeams('${esc(key)}',event)">
+    <div class="gantt-row-label" title="${esc(p.title)}">
+      <input type="checkbox" class="gantt-check" ${included?'checked':''} onchange="toggleGanttProject('${esc(key)}')">
+      <span>${esc((p.title||'').substring(0,36))}</span>
+    </div>
+    <div class="gantt-row-bar-area">
+      <div class="gantt-bar ${cls} draggable" style="left:${left}%;width:${width}%" title="${esc(p.title)}${rice}\n${p.startDate} → ${p.endDate}\n${p.division||''}${fullTeamTip}"><div class="gantt-resize gantt-resize-l"></div><span class="gantt-bar-text">${clippedLeft}${(p.title||'').substring(0,28)}${rice}${teamBadge}${clippedRight}</span><div class="gantt-resize gantt-resize-r"></div></div>
+    </div>
+  </div>`;
+}
+
+function toggleGanttProject(key) {
+  const wasExcluded = state.excludedFromRoadmap.has(key);
+  const proj = state.projects.find(p => String(p.id ?? p._row) === key);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dMon = proj ? ((proj.duration && +proj.duration > 0) ? +proj.duration : _estimateDuration(proj)) : 3;
+
+  if (wasExcluded) {
+    // Re-include: move to NOW, assign dates starting today
+    state.excludedFromRoadmap.delete(key);
+    if (proj) {
+      proj.bucket = 'NOW';
+      proj.startDate = today.toISOString().slice(0,10);
+      const endD = new Date(today);
+      endD.setMonth(endD.getMonth() + dMon);
+      proj.endDate = endD.toISOString().slice(0,10);
+      proj.moscow = classifyMoSCoW(proj.riceScore, proj);
+    }
+  } else {
+    // Deactivate: move to FUTURE, shift start date to month 13+
+    state.excludedFromRoadmap.add(key);
+    if (proj) {
+      proj.bucket = 'FUTURE';
+      const m0 = new Date(today.getFullYear(), today.getMonth(), 1);
+      const futureStart = new Date(m0);
+      futureStart.setMonth(futureStart.getMonth() + 13);
+      proj.startDate = futureStart.toISOString().slice(0,10);
+      const futureEnd = new Date(futureStart);
+      futureEnd.setMonth(futureEnd.getMonth() + dMon);
+      proj.endDate = futureEnd.toISOString().slice(0,10);
+    }
+  }
+  // Re-render so project moves to correct section
+  _tabRendered.analytics = false;
+  renderGantt();
+}
+
+/** Click a Gantt row to highlight its required teams in the capacity panel */
+function highlightGanttTeams(key, event) {
+  // Don't trigger when clicking checkbox or dragging
+  if (event && (event.target.classList.contains('gantt-check') || event.target.classList.contains('gantt-resize'))) return;
+  // Toggle highlight
+  if (state.highlightedProjectKey === key) {
+    state.highlightedProjectKey = null;
+  } else {
+    state.highlightedProjectKey = key;
+  }
+  // Update row visual
+  document.querySelectorAll('.gantt-row').forEach(r => {
+    r.classList.toggle('gantt-row-highlighted', r.dataset.pid === state.highlightedProjectKey);
+  });
+  // Re-render capacity panel with highlights
+  renderGanttCapacity();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SAVED ROADMAP VERSIONS
+   ══════════════════════════════════════════════════════════════ */
+function openSaveRoadmapModal() {
+  const modal = document.getElementById('saveRoadmapModal');
+  document.getElementById('srName').value = '';
+  document.getElementById('srNotes').value = '';
+  modal.classList.add('active');
+  setTimeout(() => document.getElementById('srName').focus(), 100);
+}
+
+function closeSaveRoadmapModal() {
+  document.getElementById('saveRoadmapModal').classList.remove('active');
+}
+
+function confirmSaveRoadmap() {
+  const name = document.getElementById('srName').value.trim();
+  if (!name) { toast('Please enter a version name', true); return; }
+  const notes = document.getElementById('srNotes').value.trim();
+
+  // Snapshot each project's roadmap-relevant fields
+  const snapshot = state.projects.map(p => ({
+    id: p.id ?? p._row,
+    title: p.title,
+    bucket: p.bucket,
+    moscow: p.moscow,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    riceScore: p.riceScore,
+    status: p.status,
+    division: p.division,
+    coverage: p.coverage,
+    significance: p.significance,
+    teams: p.teams ? JSON.parse(JSON.stringify(p.teams)) : {},
+  }));
+
+  const excluded = [...state.excludedFromRoadmap];
+  const nowCount = snapshot.filter(p => p.bucket === 'NOW').length;
+  const nextCount = snapshot.filter(p => p.bucket === 'NEXT').length;
+  const futureCount = snapshot.filter(p => p.bucket === 'FUTURE').length;
+
+  const version = {
+    id: Date.now(),
+    name,
+    notes,
+    savedAt: new Date().toISOString(),
+    projectCount: snapshot.length,
+    nowCount,
+    nextCount,
+    futureCount,
+    snapshot,
+    excluded,
+  };
+
+  state.savedRoadmaps.push(version);
+  state.activeRoadmapId = version.id;
+  _persistSavedRoadmaps();
+  closeSaveRoadmapModal();
+  renderSavedRoadmapsBar();
+  toast(`Saved roadmap version: "${name}" ✓`);
+}
+
+function loadRoadmapVersion(versionId) {
+  const version = state.savedRoadmaps.find(v => v.id === versionId);
+  if (!version) { toast('Version not found', true); return; }
+
+  // Restore snapshot → current projects
+  version.snapshot.forEach(snap => {
+    const proj = state.projects.find(p => (p.id ?? p._row) == snap.id);
+    if (!proj) return;
+    proj.bucket = snap.bucket;
+    proj.moscow = snap.moscow;
+    proj.startDate = snap.startDate;
+    proj.endDate = snap.endDate;
+    proj.teams = snap.teams ? JSON.parse(JSON.stringify(snap.teams)) : {};
+  });
+
+  // Restore exclusions
+  state.excludedFromRoadmap = new Set(version.excluded || []);
+  state.activeRoadmapId = versionId;
+
+  // Re-render everything
+  _tabRendered.gantt = false;
+  _tabRendered.roadmap = false;
+  _tabRendered.analytics = false;
+  updateStats();
+  renderGantt();
+  renderSavedRoadmapsBar();
+  toast(`Loaded roadmap: "${version.name}"`);
+}
+
+function deleteRoadmapVersion(versionId, evt) {
+  if (evt) evt.stopPropagation();
+  const version = state.savedRoadmaps.find(v => v.id === versionId);
+  if (!version) return;
+  if (!confirm(`Delete saved version "${version.name}"?`)) return;
+  state.savedRoadmaps = state.savedRoadmaps.filter(v => v.id !== versionId);
+  if (state.activeRoadmapId === versionId) state.activeRoadmapId = null;
+  _persistSavedRoadmaps();
+  renderSavedRoadmapsBar();
+  toast(`Deleted version: "${version.name}"`);
+}
+
+function renderSavedRoadmapsBar() {
+  const bar = document.getElementById('savedRoadmapsBar');
+  const detailPanel = document.getElementById('savedRoadmapDetail');
+  if (!bar) return;
+  if (!state.savedRoadmaps.length) {
+    bar.innerHTML = '';
+    if (detailPanel) detailPanel.innerHTML = '';
+    return;
+  }
+
+  let html = '<div class="saved-roadmaps-bar">';
+  html += '<div class="sr-label">📂 Saved Versions:</div>';
+  html += '<div class="sr-chips">';
+  state.savedRoadmaps.forEach(v => {
+    const isActive = v.id === state.activeRoadmapId;
+    const date = new Date(v.savedAt);
+    const dateStr = date.toLocaleDateString('en', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    html += `<div class="sr-chip${isActive ? ' active' : ''}" onclick="loadRoadmapVersion(${v.id})" title="${esc(v.notes || 'No notes')}">`;
+    html += `<span>${esc(v.name)}</span>`;
+    html += `<span class="sr-chip-date">${dateStr}</span>`;
+    html += `<span class="sr-chip-del" onclick="deleteRoadmapVersion(${v.id}, event)" title="Delete this version">✕</span>`;
+    html += '</div>';
+  });
+  html += '</div></div>';
+  bar.innerHTML = html;
+
+  // Show details for active version
+  if (detailPanel) {
+    const active = state.savedRoadmaps.find(v => v.id === state.activeRoadmapId);
+    if (active) {
+      detailPanel.innerHTML = `<div class="sr-detail-panel">
+        <div class="sr-detail-header">
+          <span style="font-weight:700;color:var(--accent)">📌 ${esc(active.name)}</span>
+          <span class="sr-chip-date">${new Date(active.savedAt).toLocaleString('en',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        ${active.notes ? `<div style="color:var(--muted);margin-bottom:6px;font-style:italic">"${esc(active.notes)}"</div>` : ''}
+        <div class="sr-detail-stats">
+          <div class="sr-detail-stat">Projects: <b>${active.projectCount}</b></div>
+          <div class="sr-detail-stat">NOW: <b style="color:var(--green)">${active.nowCount}</b></div>
+          <div class="sr-detail-stat">NEXT: <b style="color:var(--orange)">${active.nextCount}</b></div>
+          <div class="sr-detail-stat">FUTURE: <b style="color:var(--muted)">${active.futureCount}</b></div>
+          <div class="sr-detail-stat">Excluded: <b>${active.excluded?.length || 0}</b></div>
+        </div>
+      </div>`;
+    } else {
+      detailPanel.innerHTML = '';
+    }
+  }
+}
+
+function _persistSavedRoadmaps() {
+  try {
+    localStorage.setItem('ppm_saved_roadmaps', JSON.stringify(state.savedRoadmaps));
+  } catch(e) { console.warn('Could not persist saved roadmaps', e); }
+}
+
+function _loadSavedRoadmaps() {
+  try {
+    const raw = localStorage.getItem('ppm_saved_roadmaps');
+    if (raw) {
+      state.savedRoadmaps = JSON.parse(raw);
+      renderSavedRoadmapsBar();
+    }
+  } catch(e) { console.warn('Could not load saved roadmaps', e); }
+}
+
+function renderGanttCapacity() {
+  const panel = document.getElementById('ganttCapPanel');
+  if (!panel) return;
+  const threshold = +(document.getElementById('ganttCapThreshold')?.value || 120);
+  const included = state.projects.filter(p =>
+    !state.excludedFromRoadmap.has(String(p.id ?? p._row)) &&
+    p.startDate && p.endDate
+  );
+  const exCount = state.excludedFromRoadmap.size;
+
+  // Build 18-month grid from today
+  const today = new Date(); today.setHours(0,0,0,0);
+  const months = [];
+  const m0 = new Date(today.getFullYear(), today.getMonth(), 1);
+  for (let i = 0; i < 18; i++) {
+    const ms = new Date(m0); ms.setMonth(ms.getMonth() + i);
+    const me = new Date(ms); me.setMonth(me.getMonth() + 1); me.setDate(0);
+    months.push({ start: ms, end: me, key: ms.toISOString().slice(0,7) });
+  }
+
+  // For each team, compute FTE load per month, then take the PEAK month
+  const activeTeams = state.teams.filter(t => t.capacity > 0);
+  const teamPeak = {}; // teamName → { peakLoad, peakMonth }
+  activeTeams.forEach(t => {
+    let peakLoad = 0, peakMonth = '';
+    months.forEach(m => {
+      let load = 0;
+      included.forEach(p => {
+        if (!p.teams || !p.teams[t.name]) return;
+        const ps = new Date(p.startDate), pe = new Date(p.endDate);
+        if (ps <= m.end && pe >= m.start) load += p.teams[t.name];
+      });
+      if (load > peakLoad) { peakLoad = load; peakMonth = m.key; }
+    });
+    teamPeak[t.name] = { peakLoad, peakMonth };
+  });
+
+  const overTeams = activeTeams.filter(t => {
+    return (teamPeak[t.name].peakLoad / t.capacity) * 100 >= threshold;
+  }).sort((a, b) => (teamPeak[b.name].peakLoad / b.capacity) - (teamPeak[a.name].peakLoad / a.capacity));
+
+  // Show ALL teams — over-capacity first, then the rest
+  const underTeams = activeTeams.filter(t => {
+    return (teamPeak[t.name].peakLoad / t.capacity) * 100 < threshold;
+  }).sort((a, b) => (teamPeak[b.name].peakLoad / b.capacity) - (teamPeak[a.name].peakLoad / a.capacity));
+
+  if (!activeTeams.length) {
+    panel.innerHTML = '<div class="gantt-cap-panel"><h4><span>🔥 Team Capacity</span><span style="font-size:.65rem;font-weight:400;color:var(--muted)">No teams with capacity</span></h4></div>';
+    return;
+  }
+  let html = '<div class="gantt-cap-panel"><h4><span>🔥 Team Capacity — Peak Month Load</span><span style="font-size:.65rem;font-weight:400;color:var(--muted)">' + (overTeams.length ? '<span style="color:var(--red)">' + overTeams.length + ' over ' + threshold + '%</span> · ' : '✓ ') + activeTeams.length + ' teams' + (exCount ? ' · ' + exCount + ' excluded' : '') + '</span></h4>';
+
+  // If a project is highlighted, show its name above the grid
+  const hlKey = state.highlightedProjectKey;
+  const hlProj = hlKey ? state.projects.find(p => String(p.id ?? p._row) === hlKey) : null;
+  const hlAllocs = hlProj && hlProj.teams ? hlProj.teams : {};
+  if (hlProj) {
+    const hlStats = getProjectTeamStats(hlProj);
+    html += '<div style="padding:4px 10px 2px;font-size:.72rem;color:var(--accent);font-weight:600">🔍 ' + esc((hlProj.title||'').substring(0,50)) + ' — ' + hlStats.teamCount + ' teams · ' + hlStats.totalFTE.toFixed(1) + ' FTE <span style="font-weight:400;color:var(--muted);cursor:pointer" onclick="highlightGanttTeams(null,event);event.stopPropagation()">✕ clear</span></div>';
+  }
+
+  html += '<div class="gantt-cap-grid">';
+  const allSorted = [...overTeams, ...underTeams];
+  allSorted.forEach(t => {
+    const pk = teamPeak[t.name];
+    const pct = (pk.peakLoad / t.capacity) * 100;
+    const isOver = pct >= threshold;
+    const color = pct > 150 ? 'var(--red)' : pct > 120 ? 'var(--orange)' : pct > 80 ? 'var(--yellow)' : 'var(--green)';
+    const isActive = state.ganttTeamFilter === t.name;
+    // Highlight if this team is required by the selected project
+    const hlFTE = hlAllocs[t.name] || 0;
+    const isHighlighted = hlProj && hlFTE > 0;
+    const border = isHighlighted ? 'border:2px solid var(--accent);box-shadow:0 0 8px rgba(99,102,241,.4);' : isActive ? 'border:2px solid var(--accent);' : isOver ? 'border-color:' + color + ';' : '';
+    const opacity = isHighlighted ? '' : isOver ? '' : 'opacity:.55;';
+    const hlBadge = isHighlighted ? '<div style="font-size:.62rem;color:var(--accent);font-weight:700;margin-top:2px">⬆ This project: ' + hlFTE.toFixed(2) + ' FTE</div>' : '';
+    html += '<div class="gantt-cap-card" style="cursor:pointer;' + border + opacity + '" onclick="filterGanttByTeam(\'' + esc(t.name).replace(/'/g, "\\'") + '\')"><div class="gc-name" title="' + esc(t.name) + '">' + esc(t.name) + '</div><div class="gc-bar"><div class="gc-fill" style="width:' + Math.min(100, pct / 2) + '%;background:' + color + '"></div></div><div class="gc-info"><span>' + pk.peakLoad.toFixed(1) + '/' + t.capacity + ' FTE <span style="color:var(--muted);font-size:.65rem">(peak ' + pk.peakMonth + ')</span></span><span style="font-weight:700;color:' + color + '">' + pct.toFixed(0) + '%</span></div>' + hlBadge + '</div>';
+  });
+  html += '</div></div>';
+  panel.innerHTML = html;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROADMAP
+   ══════════════════════════════════════════════════════════════ */
+function renderRoadmap() {
+  const roadmapQ = ($('#roadmapSearch').value || '').toLowerCase().trim();
+  const ft = $('#roadmapType').value;
+  const fd = $('#roadmapDivision').value;
+  const fc = $('#roadmapCoverage').value;
+
+  let data = state.projects.filter(p => {
+    // Global filter from stats bar
+    if (state.globalFilter === 'Active' && p.status !== 'Active') return false;
+    if (state.globalFilter === 'Pipeline' && p.status !== 'Pipeline') return false;
+    if (state.globalFilter === 'NOW' && p.bucket !== 'NOW') return false;
+    if (state.globalFilter === 'NEXT' && p.bucket !== 'NEXT') return false;
+    if (state.globalFilter === 'FUTURE' && p.bucket !== 'FUTURE') return false;
+    if (roadmapQ && !matchesSearch(p, roadmapQ)) return false;
+    if (ft === 'tech' && !isTechProject(p)) return false;
+    if (ft === 'other' && isTechProject(p)) return false;
+    if (fd && p.division !== fd) return false;
+    if (fc && p.coverage !== fc) return false;
+    return true;
+  });
+
+  const now = data.filter(p => p.bucket === 'NOW').sort((a,b) => (b.riceScore||0) - (a.riceScore||0));
+  const next = data.filter(p => p.bucket === 'NEXT').sort((a,b) => (b.riceScore||0) - (a.riceScore||0));
+  const future = data.filter(p => p.bucket === 'FUTURE').sort((a,b) => (b.riceScore||0) - (a.riceScore||0));
+
+  $('#roadmapCount').textContent = `NOW: ${now.length} · NEXT: ${next.length} · FUTURE: ${future.length}`;
+
+  function renderCol(items, max) {
+    return items.slice(0, max || 60).map(p => {
+      const scoreColor = riceColor(p.riceScore);
+      const ts = getProjectTeamStats(p);
+      const teamInfo = ts.teamCount > 0 ? `<span style="color:var(--accent);font-weight:600">👥 ${ts.teamCount} teams · ${ts.totalFTE.toFixed(1)} FTE</span>` : '<span style="color:var(--muted)">No teams assigned</span>';
+      return `<div class="roadmap-item">
+        <span class="ri-score" style="color:${scoreColor}">${fmtScore(p.riceScore)}</span>
+        <div class="ri-title">${esc((p.title||'').substring(0,65))}</div>
+        <div class="ri-meta">${fmt(p.division)} · ${fmt(p.coverage)} · ${moscowBadge(p.moscow)}</div>
+        <div class="ri-meta">${fmt(p.startDate)} → ${fmt(p.endDate)} · ${p.duration ? p.duration + 'mo' : ''} · ${fmt(p.significance)}</div>
+        <div class="ri-meta">${teamInfo}</div>
+      </div>`;
+    }).join('');
+  }
+
+  $('#roadmapCols').innerHTML = `
+    <div class="roadmap-col now"><h3>🟢 NOW — Active &amp; High Priority (${now.length})</h3>${renderCol(now)}</div>
+    <div class="roadmap-col next"><h3>🔵 NEXT — Planned &amp; Scheduled (${next.length})</h3>${renderCol(next)}</div>
+    <div class="roadmap-col future"><h3>🟣 FUTURE — Backlog &amp; Ideas (${future.length})</h3>${renderCol(future, 80)}</div>
+  `;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CSV EXPORT
+   ══════════════════════════════════════════════════════════════ */
+function exportCSV() {
+  const data = state.filtered.length ? state.filtered : state.projects;
+  const headers = ['ID','Title','Status','Nature','Coverage','Division','Significance','Theme','RICE Score','MoSCoW','Bucket','Start Date','End Date','Duration(months)'];
+  const rows = data.map(p => [p.id,`"${(p.title||'').replace(/"/g,'""')}"`,p.status,p.nature,p.coverage,p.division,p.significance,p.theme,p.riceScore,p.moscow,p.bucket,p.startDate,p.endDate,p.duration]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `roadmap_export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('Exported CSV ✓');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AUTO ROADMAP GENERATOR
+   ══════════════════════════════════════════════════════════════ */
+
+/**
+ * Generate an optimal roadmap. Duration = months.
+ * Active projects: start today, run for duration (remaining months).
+ * Pipeline: sorted by RICE desc, placed at earliest month where all teams
+ * fit within capacity limit. Try months 1-12 from today.
+ * ≤6 months → NOW, 7-12 → NEXT, cannot fit → FUTURE.
+ */
+function generateOptimalRoadmap() {
+  const btn = document.getElementById('btnGenRoadmap');
+  btn.classList.add('running');
+  btn.innerHTML = '⏳ Generating...';
+
+  // Let the UI update before heavy calc
+  setTimeout(() => {
+    try {
+      const result = _runRoadmapEngine();
+      // Reset exclusions: NOW/NEXT included, FUTURE excluded
+      state.excludedFromRoadmap = new Set();
+      state.projects.forEach(p => {
+        if (p.bucket === 'FUTURE') {
+          state.excludedFromRoadmap.add(String(p.id ?? p._row));
+        }
+      });
+      _showGenResults(result);
+      // Re-render everything
+      _tabRendered.gantt = false; _tabRendered.roadmap = false;
+      _tabRendered.analytics = false; _tabRendered.config = false;
+      updateStats();
+      renderGantt();
+      state.activeRoadmapId = null;
+      renderSavedRoadmapsBar();
+      toast(`🚀 Roadmap generated: ${result.nowCount} NOW, ${result.nextCount} NEXT, ${result.futureCount} FUTURE`);
+    } catch(e) {
+      console.error(e);
+      toast('Roadmap generation failed: ' + e.message, true);
+    } finally {
+      btn.classList.remove('running');
+      btn.innerHTML = '🚀 Generate Roadmap';
+    }
+  }, 50);
+}
+
+function _runRoadmapEngine() {
+  const limit = state.globalCapacityLimit / 100; // e.g. 1.2
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const log = [];
+  const HORIZON = 18; // months from today
+
+  // Build 18-month grid from current month
+  const months = [];
+  const m0 = new Date(today.getFullYear(), today.getMonth(), 1);
+  for (let i = 0; i < HORIZON; i++) {
+    const ms = new Date(m0);
+    ms.setMonth(ms.getMonth() + i);
+    months.push({ start: new Date(ms), key: ms.toISOString().slice(0,7), index: i });
+  }
+  months.forEach((m, i) => {
+    if (i < months.length - 1) {
+      m.end = new Date(months[i+1].start.getTime() - 86400000);
+    } else {
+      const last = new Date(m.start);
+      last.setMonth(last.getMonth() + 1);
+      last.setDate(0);
+      m.end = last;
+    }
+  });
+
+  // Team monthly capacity: teamName → monthKey → { used, max }
+  const teamCap = {};
+  state.teams.forEach(t => {
+    if (t.capacity <= 0) return;
+    teamCap[t.name] = {};
+    months.forEach(m => {
+      teamCap[t.name][m.key] = { used: 0, max: t.capacity * limit };
+    });
+  });
+
+  // ── Step 1: Active projects → start today, run for duration months ──
+  const active = state.projects.filter(p => p.status === 'Active');
+  const pipeline = state.projects.filter(p => p.status !== 'Active');
+
+  active.forEach(p => {
+    p.bucket = 'NOW';
+    const dMon = (p.duration && +p.duration > 0) ? +p.duration : 3;
+    p.startDate = today.toISOString().slice(0,10);
+    const endD = new Date(today);
+    endD.setMonth(endD.getMonth() + dMon);
+    p.endDate = endD.toISOString().slice(0,10);
+    // Load concurrent FTE into capacity grid
+    if (p.teams) {
+      months.forEach(m => {
+        const ps = new Date(p.startDate), pe = new Date(p.endDate);
+        if (ps <= m.end && pe >= m.start) {
+          for (const [tName, tVal] of Object.entries(p.teams)) {
+            if (!tVal || !teamCap[tName] || !teamCap[tName][m.key]) continue;
+            teamCap[tName][m.key].used += tVal;
+          }
+        }
+      });
+    }
+  });
+  log.push(`<span class="log-now">✓ ${active.length} active projects → NOW (today + duration months, capacity loaded)</span>`);
+
+  // ── Step 2: Sort pipeline by MoSCoW priority then RICE desc ──
+  const MOSCOW_ORDER = {'Must Have':0,'Should Have':1,'Could Have':2,"Won't Have":3};
+  const scored = pipeline.filter(p => p.riceScore != null && p.riceScore > 0)
+    .sort((a,b) => {
+      const ma = MOSCOW_ORDER[a.moscow] ?? 3, mb = MOSCOW_ORDER[b.moscow] ?? 3;
+      if (ma !== mb) return ma - mb;
+      return (b.riceScore||0) - (a.riceScore||0);
+    });
+  const unscored = pipeline.filter(p => p.riceScore == null || p.riceScore <= 0);
+
+  let nowCount = active.length, nextCount = 0, futureCount = 0;
+  const maxPar = state.maxParallelProjects || 80;
+
+  // Track concurrent projects per month for parallel limit
+  const monthConcurrent = {};
+  months.forEach(m => { monthConcurrent[m.key] = 0; });
+  // Count active projects into concurrency tracker
+  active.forEach(p => {
+    if (!p.startDate || !p.endDate) return;
+    const ps = new Date(p.startDate), pe = new Date(p.endDate);
+    months.forEach(m => {
+      if (ps <= m.end && pe >= m.start) monthConcurrent[m.key]++;
+    });
+  });
+
+  // ── Step 3: Schedule pipeline by capacity-aware month fitting ──
+  // Must Have: try months 1-5 first (time-critical), then extend to 12. Never FUTURE.
+  // Others: try months 1-12. Parallel limit enforced.
+  scored.forEach(p => {
+    const dMon = (p.duration && +p.duration > 0) ? +p.duration : _estimateDuration(p);
+    const teamAllocs = p.teams || {};
+    const hasFTE = Object.values(teamAllocs).some(v => v > 0);
+    const durSource = (p.duration && +p.duration > 0) ? 'excel' : 'estimated';
+    const isMustHave = p.moscow === 'Must Have';
+
+    let bestStart = -1;
+    const maxTry = Math.min(months.length, 13); // try month indices 1..12
+    for (let si = 1; si < maxTry; si++) {
+      if (si + dMon > months.length) continue;
+      let fits = true;
+      // Check parallel limit
+      for (let mi = si; mi < si + dMon; mi++) {
+        if (monthConcurrent[months[mi].key] >= maxPar) { fits = false; break; }
+      }
+      if (!fits) continue;
+      // Check team capacity
+      for (let mi = si; mi < si + dMon; mi++) {
+        for (const [tName, tVal] of Object.entries(teamAllocs)) {
+          if (!tVal || !teamCap[tName]) continue;
+          const mc = teamCap[tName][months[mi].key];
+          if (!mc || mc.used + tVal > mc.max) { fits = false; break; }
+        }
+        if (!fits) break;
+      }
+      if (fits) { bestStart = si; break; }
+    }
+
+    // Must Have fallback: if no capacity slot found, force into months 2-5
+    if (bestStart < 0 && isMustHave) {
+      const fallback = Math.min(2, months.length - dMon);
+      if (fallback >= 1) bestStart = fallback;
+    }
+
+    if (bestStart >= 0) {
+      const startDate = new Date(months[bestStart].start);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + dMon);
+      p.startDate = startDate.toISOString().slice(0,10);
+      p.endDate = endDate.toISOString().slice(0,10);
+
+      // Reserve capacity in each spanned month
+      for (let mi = bestStart; mi < bestStart + dMon && mi < months.length; mi++) {
+        for (const [tName, tVal] of Object.entries(teamAllocs)) {
+          if (!tVal || !teamCap[tName]) continue;
+          const mc = teamCap[tName][months[mi].key];
+          if (mc) mc.used += tVal;
+        }
+        monthConcurrent[months[mi].key]++;
+      }
+
+      // Bucket based on start month offset from today
+      if (bestStart <= 6) {
+        p.bucket = 'NOW';
+        nowCount++;
+        log.push(`<span class="log-now">→ NOW: ${esc((p.title||'').substring(0,40))} [${p.moscow}] (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo ${durSource}, ${p.startDate} → ${p.endDate})</span>`);
+      } else {
+        p.bucket = 'NEXT';
+        nextCount++;
+        log.push(`<span class="log-next">→ NEXT: ${esc((p.title||'').substring(0,40))} [${p.moscow}] (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo ${durSource}, ${p.startDate} → ${p.endDate})</span>`);
+      }
+    } else if (isMustHave) {
+      // Must Have: NEVER FUTURE → force NEXT with dates
+      p.bucket = 'NEXT';
+      const forceIdx = Math.min(2, months.length - 1);
+      const mhStart = new Date(months[forceIdx].start);
+      p.startDate = mhStart.toISOString().slice(0,10);
+      const mhEnd = new Date(mhStart);
+      mhEnd.setMonth(mhEnd.getMonth() + dMon);
+      p.endDate = mhEnd.toISOString().slice(0,10);
+      nextCount++;
+      log.push(`<span class="log-next">→ NEXT (Must Have, no slot): ${esc((p.title||'').substring(0,40))} (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo${hasFTE ? '' : ' · no FTE'}, ${p.startDate} → ${p.endDate})</span>`);
+    } else {
+      // Cannot fit within 12 months → FUTURE, assign dates beyond month 12
+      p.bucket = 'FUTURE';
+      const futIdx = Math.min(13, months.length - 1);
+      const futStart = new Date(months[futIdx].start);
+      p.startDate = futStart.toISOString().slice(0,10);
+      const futEnd = new Date(futStart);
+      futEnd.setMonth(futEnd.getMonth() + dMon);
+      p.endDate = futEnd.toISOString().slice(0,10);
+      futureCount++;
+      log.push(`<span class="log-future">→ FUTURE (no slot in 12mo): ${esc((p.title||'').substring(0,40))} [${p.moscow}] (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo${hasFTE ? '' : ' · no FTE'}, ${p.startDate} → ${p.endDate})</span>`);
+    }
+  });
+
+  // ── Step 4: Unscored pipeline → assign dates ──
+  unscored.forEach(p => {
+    const uDur = (p.duration && +p.duration > 0) ? +p.duration : _estimateDuration(p);
+    if (p.moscow === 'Must Have') {
+      p.bucket = 'NEXT';
+      const forceIdx = Math.min(2, months.length - 1);
+      const uStart = new Date(months[forceIdx].start);
+      p.startDate = uStart.toISOString().slice(0,10);
+      const uEnd = new Date(uStart);
+      uEnd.setMonth(uEnd.getMonth() + uDur);
+      p.endDate = uEnd.toISOString().slice(0,10);
+      nextCount++;
+    } else {
+      p.bucket = 'FUTURE';
+      const futIdx = Math.min(13, months.length - 1);
+      const uStart = new Date(months[futIdx].start);
+      p.startDate = uStart.toISOString().slice(0,10);
+      const uEnd = new Date(uStart);
+      uEnd.setMonth(uEnd.getMonth() + uDur);
+      p.endDate = uEnd.toISOString().slice(0,10);
+      futureCount++;
+    }
+  });
+  if (unscored.length) {
+    log.push(`<span class="log-future">→ ${unscored.length} unscored projects → assigned by MoSCoW</span>`);
+  }
+
+  // Update config to match planning horizon for Gantt
+  $('#cfgStart').value = months[0].start.toISOString().slice(0,10);
+  $('#cfgEnd').value = months[months.length - 1].end.toISOString().slice(0,10);
+
+  // Compute overall capacity utilization summary
+  const capSummary = {};
+  state.teams.forEach(t => {
+    if (t.capacity <= 0) return;
+    const loads = months.map(m => teamCap[t.name]?.[m.key]?.used || 0);
+    const avgLoad = loads.reduce((s,v)=>s+v,0) / loads.length;
+    const avgPct = (avgLoad / t.capacity) * 100;
+    capSummary[t.name] = { avgPct, peakPct: Math.max(...loads.map(l => (l/t.capacity)*100)) };
+  });
+
+  return { nowCount, nextCount, futureCount, log, capSummary, months, teamCap };
+}
+
+function _estimateDuration(p) {
+  // Estimate project duration in MONTHS based on effort
+  const effortVal = parseRICE(p.effort, RICE_EFFORT) || 2;
+  // Heuristic: effort 1→2mo, 2→3mo, 3→5mo, 4→8mo
+  return [2, 3, 5, 8][Math.min(3, Math.max(0, effortVal - 1))];
+}
+
+function _countWorkDays(d1, d2) {
+  let count = 0;
+  const cur = new Date(d1);
+  while (cur <= d2) {
+    if (cur.getDay() !== 0 && cur.getDay() !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+function _loadProjectCapacity(p, months, teamCap, action) {
+  if (!p.startDate || !p.endDate || !p.teams) return;
+  const ps = new Date(p.startDate);
+  const pe = new Date(p.endDate);
+
+  // FTE is concurrent: each team allocation is the FTE needed per month
+  // (not total FTE divided over months)
+  months.forEach(m => {
+    // Check if project overlaps this month
+    if (ps <= m.end && pe >= m.start) {
+      for (const [tName, tVal] of Object.entries(p.teams)) {
+        if (!tVal || !teamCap[tName] || !teamCap[tName][m.key]) continue;
+        if (action === 'add') {
+          teamCap[tName][m.key].used += tVal;  // full concurrent FTE
+        }
+      }
+    }
+  });
+}
+
+function _showGenResults(result) {
+  const panel = document.getElementById('roadmapGenPanel');
+  if (!panel) return;
+
+  const overCap = Object.entries(result.capSummary)
+    .filter(([,v]) => v.peakPct > 100)
+    .sort((a,b) => b[1].peakPct - a[1].peakPct);
+
+  let html = `<div class="roadmap-gen-panel">
+    <h4>🚀 Roadmap Generation Results
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('roadmapGenPanel').innerHTML=''" style="font-size:.65rem;margin-left:auto">✕ Dismiss</button>
+    </h4>
+    <div class="gen-stats">
+      <div class="gen-stat"><div class="gs-val" style="color:var(--green)">${result.nowCount}</div><div class="gs-lbl">NOW</div></div>
+      <div class="gen-stat"><div class="gs-val" style="color:var(--accent)">${result.nextCount}</div><div class="gs-lbl">NEXT</div></div>
+      <div class="gen-stat"><div class="gs-val" style="color:var(--accent2)">${result.futureCount}</div><div class="gs-lbl">FUTURE</div></div>
+      <div class="gen-stat"><div class="gs-val" style="color:var(--orange)">${state.globalCapacityLimit}%</div><div class="gs-lbl">Cap Limit</div></div>
+      ${overCap.length ? `<div class="gen-stat"><div class="gs-val" style="color:var(--red)">${overCap.length}</div><div class="gs-lbl">Over-Cap Teams</div></div>` : `<div class="gen-stat"><div class="gs-val" style="color:var(--green)">✓</div><div class="gs-lbl">All Within Cap</div></div>`}
+    </div>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 Scheduling Log (${result.log.length} actions) — <i>Duration = months. Drag Gantt bars to adjust. Active start today; pipeline placed by RICE priority × capacity.</i></div>
+    <div class="gen-log">${result.log.join('<br>')}</div>
+  </div>`;
+  panel.innerHTML = html;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MONTHLY CAPACITY UTILIZATION
+   ══════════════════════════════════════════════════════════════ */
+
+/** Filter Gantt chart by a specific team from over-capacity cards */
+function filterGanttByTeam(teamName) {
+  if (state.ganttTeamFilter === teamName) {
+    state.ganttTeamFilter = null; // toggle off
+  } else {
+    state.ganttTeamFilter = teamName;
+  }
+  renderGantt();
+  toast(state.ganttTeamFilter ? `🔍 Showing projects for ${teamName}` : 'Filter cleared');
+}
+
+function clearGanttTeamFilter() {
+  state.ganttTeamFilter = null;
+  renderGantt();
+  toast('Team filter cleared');
+}
+
+/**
+ * Calculate per-month capacity utilization for a SINGLE team.
+ */
+function calcTeamMonthlyCapUtil(months, teamName) {
+  const team = state.teams.find(t => t.name === teamName);
+  if (!team || team.capacity <= 0) return months.map(() => ({ pct: 0, color: 'var(--green)' }));
+
+  const included = state.projects.filter(p =>
+    !state.excludedFromRoadmap.has(String(p.id ?? p._row)) &&
+    p.startDate && p.endDate
+  );
+
+  return months.map(m => {
+    const mStart = m;
+    const mEnd = new Date(mStart);
+    mEnd.setMonth(mEnd.getMonth() + 1);
+    mEnd.setDate(0);
+
+    let load = 0;
+    included.forEach(p => {
+      const ps = new Date(p.startDate);
+      const pe = new Date(p.endDate);
+      if (ps <= mEnd && pe >= mStart && p.teams && p.teams[teamName]) {
+        load += p.teams[teamName];
+      }
+    });
+    const pct = (load / team.capacity) * 100;
+    const color = pct > 120 ? 'var(--red)' : pct > 90 ? 'var(--orange)' : pct > 60 ? 'var(--yellow)' : 'var(--green)';
+    return { pct, color };
+  });
+}
+
+/**
+ * Calculate per-month average capacity utilization across all teams,
+ * based on which projects overlap each month.
+ */
+function calcMonthlyCapUtil(months, cfgStart, cfgEnd) {
+  const teamsWithCap = state.teams.filter(t => t.capacity > 0);
+  if (!teamsWithCap.length) return months.map(() => ({ pct: 0, color: 'var(--green)' }));
+
+  const included = state.projects.filter(p =>
+    !state.excludedFromRoadmap.has(String(p.id ?? p._row)) &&
+    p.startDate && p.endDate
+  );
+
+  return months.map(m => {
+    const mStart = m;
+    const mEnd = new Date(mStart);
+    mEnd.setMonth(mEnd.getMonth() + 1);
+    mEnd.setDate(0); // last day of month
+
+    // For each team, sum the concurrent FTE load from overlapping projects
+    let totalPct = 0;
+    let teamCount = 0;
+
+    teamsWithCap.forEach(t => {
+      let load = 0;
+      included.forEach(p => {
+        const ps = new Date(p.startDate);
+        const pe = new Date(p.endDate);
+        // If project overlaps this month, add its FULL concurrent FTE
+        // (team allocation = FTE per month, not total FTE split across months)
+        if (ps <= mEnd && pe >= mStart && p.teams && p.teams[t.name]) {
+          load += p.teams[t.name];
+        }
+      });
+      const pct = (load / t.capacity) * 100;
+      totalPct += pct;
+      teamCount++;
+    });
+
+    const avgPct = teamCount > 0 ? totalPct / teamCount : 0;
+    const color = avgPct > 120 ? 'var(--red)' : avgPct > 90 ? 'var(--orange)' : avgPct > 60 ? 'var(--yellow)' : 'var(--green)';
+    return { pct: avgPct, color };
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DRAGGABLE GANTT BARS
+   ══════════════════════════════════════════════════════════════ */
+let _dragState = null;
+let _dragCapTimer = null;
+
+/** Debounced live capacity update during drag — temporarily applies bar position to project dates */
+const _liveDragCapUpdate = function() {
+  if (_dragCapTimer) clearTimeout(_dragCapTimer);
+  _dragCapTimer = setTimeout(() => {
+    if (!_dragState) return;
+    const { bar, project, cfgStart, totalDays } = _dragState;
+    const newLeft = parseFloat(bar.style.left);
+    const newWidth = parseFloat(bar.style.width);
+    const startDay = Math.round((newLeft / 100) * totalDays);
+    const durationDays = Math.max(1, Math.round((newWidth / 100) * totalDays));
+    const tmpStart = new Date(cfgStart.getTime() + startDay * 86400000);
+    const tmpEnd = new Date(tmpStart.getTime() + durationDays * 86400000);
+    // Temporarily set project dates for capacity recalc
+    const savedStart = project.startDate, savedEnd = project.endDate;
+    project.startDate = tmpStart.toISOString().slice(0, 10);
+    project.endDate = tmpEnd.toISOString().slice(0, 10);
+    // Update both capacity displays
+    renderGanttCapacity();
+    _updateMonthlyCapBar();
+    // Keep the temporary dates (they'll be finalized in dragEnd)
+  }, 80); // 80ms debounce for smooth performance
+};
+
+function initGanttDrag() {
+  const container = document.getElementById('ganttContainer');
+  if (!container) return;
+
+  container.addEventListener('mousedown', (e) => {
+    const resizeHandle = e.target.closest('.gantt-resize');
+    const bar = e.target.closest('.gantt-bar.draggable');
+    if (!bar) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const barArea = bar.parentElement;
+    const areaRect = barArea.getBoundingClientRect();
+    const row = bar.closest('.gantt-row');
+    const pid = row?.dataset.pid;
+    const project = state.projects.find(p => String(p.id ?? p._row) === pid);
+    if (!project) return;
+
+    const cfgStart = new Date($('#cfgStart').value || '2026-01-01');
+    const cfgEnd = new Date($('#cfgEnd').value || '2027-06-30');
+    const totalDays = (cfgEnd - cfgStart) / 86400000;
+
+    _dragState = {
+      bar, barArea,
+      areaWidth: areaRect.width,
+      startX: e.clientX,
+      origLeft: parseFloat(bar.style.left),
+      origWidth: parseFloat(bar.style.width),
+      type: resizeHandle ? (resizeHandle.classList.contains('gantt-resize-l') ? 'resize-left' : 'resize-right') : 'move',
+      project, cfgStart, totalDays,
+    };
+
+    bar.classList.add('dragging');
+    document.addEventListener('mousemove', _onGanttDrag);
+    document.addEventListener('mouseup', _onGanttDragEnd);
+  });
+}
+
+function _onGanttDrag(e) {
+  if (!_dragState) return;
+  const dx = e.clientX - _dragState.startX;
+  const dPct = (dx / _dragState.areaWidth) * 100;
+
+  if (_dragState.type === 'move') {
+    _dragState.bar.style.left = Math.max(0, _dragState.origLeft + dPct) + '%';
+  } else if (_dragState.type === 'resize-left') {
+    const newLeft = Math.max(0, _dragState.origLeft + dPct);
+    const newWidth = _dragState.origWidth - (newLeft - _dragState.origLeft);
+    if (newWidth > 0.3) {
+      _dragState.bar.style.left = newLeft + '%';
+      _dragState.bar.style.width = newWidth + '%';
+    }
+  } else {
+    const newWidth = Math.max(0.3, _dragState.origWidth + dPct);
+    _dragState.bar.style.width = newWidth + '%';
+  }
+
+  // Live-update capacity during drag (debounced)
+  _liveDragCapUpdate();
+}
+
+function _onGanttDragEnd(e) {
+  if (!_dragState) return;
+  if (_dragCapTimer) { clearTimeout(_dragCapTimer); _dragCapTimer = null; }
+  document.removeEventListener('mousemove', _onGanttDrag);
+  document.removeEventListener('mouseup', _onGanttDragEnd);
+
+  const { bar, project, cfgStart, totalDays } = _dragState;
+  bar.classList.remove('dragging');
+
+  const newLeft = parseFloat(bar.style.left);
+  const newWidth = parseFloat(bar.style.width);
+
+  // Convert percentage back to dates
+  const startDay = Math.round((newLeft / 100) * totalDays);
+  const durationDays = Math.max(1, Math.round((newWidth / 100) * totalDays));
+
+  const newStart = new Date(cfgStart.getTime() + startDay * 86400000);
+  const newEnd = new Date(newStart.getTime() + durationDays * 86400000);
+
+  project.startDate = newStart.toISOString().slice(0, 10);
+  project.endDate = newEnd.toISOString().slice(0, 10);
+  project.duration = Math.max(1, Math.round(durationDays / 30));
+
+  // Update bar tooltip
+  const rice = project.riceScore != null ? ` [${(+project.riceScore).toFixed(1)}]` : '';
+  bar.title = `${project.title||''}${rice}\n${project.startDate} → ${project.endDate}\n${project.division||''}`;
+
+  // Re-render capacity panels with flash
+  renderGanttCapacity();
+  _updateMonthlyCapBar(true);
+  updateStats();
+
+  // Flash the capacity cards
+  document.querySelectorAll('.gantt-cap-card').forEach(c => {
+    c.classList.remove('cap-flash');
+    void c.offsetWidth; // force reflow
+    c.classList.add('cap-flash');
+  });
+
+  toast(`📅 ${(project.title||'').substring(0,40)} → ${project.startDate} to ${project.endDate}`);
+  _persistToLocalStorage();
+  _dragState = null;
+}
+
+/** Live-update the monthly capacity utilization row after Gantt drag */
+function _updateMonthlyCapBar(flash) {
+  const capRow = document.querySelector('.gantt-cap-row');
+  if (!capRow) return;
+  const cfgStart = new Date($('#cfgStart').value || '2026-01-01');
+  const cfgEnd = new Date($('#cfgEnd').value || '2027-06-30');
+  const months = [];
+  const d = new Date(cfgStart); d.setDate(1);
+  while (d <= cfgEnd) { months.push(new Date(d)); d.setMonth(d.getMonth() + 1); }
+
+  const utils = state.ganttTeamFilter
+    ? calcTeamMonthlyCapUtil(months, state.ganttTeamFilter)
+    : calcMonthlyCapUtil(months, cfgStart, cfgEnd);
+  const cells = capRow.querySelectorAll('.gantt-cap-cell');
+  cells.forEach((cell, i) => {
+    if (!utils[i]) return;
+    const pctEl = cell.querySelector('.cap-pct');
+    const fillEl = cell.querySelector('.cap-bar-fill');
+    const oldPct = pctEl ? pctEl.textContent : '';
+    const newPctText = utils[i].pct > 0 ? utils[i].pct.toFixed(0) + '%' : '—';
+    if (pctEl) {
+      pctEl.textContent = newPctText;
+      pctEl.style.color = utils[i].color;
+    }
+    if (fillEl) {
+      fillEl.style.width = Math.min(100, utils[i].pct) + '%';
+      fillEl.style.background = utils[i].color;
+    }
+    // Flash cells that changed
+    if (flash && oldPct !== newPctText) {
+      cell.classList.remove('cap-flash');
+      void cell.offsetWidth;
+      cell.classList.add('cap-flash');
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TABS
+   ══════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    const t = tab.dataset.tab;
+    // Lazy-render on first visit, always re-render charts/gantt/roadmap
+    if (t === 'config' && !_tabRendered.config) { renderConfig(); _tabRendered.config = true; }
+    if (t === 'analytics') renderAnalytics();
+    if (t === 'gantt') renderGantt();
+    if (t === 'roadmap') renderRoadmap();
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════════════ */
+initGanttDrag();
+_loadSavedRoadmaps();
+loadData();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" async></script>
+</body>
+</html>
