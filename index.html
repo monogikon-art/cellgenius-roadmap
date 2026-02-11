@@ -846,6 +846,7 @@ function parseExcelBuffer(data) {
 function handleExcelUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
+  toast('Your data stays local to your browser. The GitHub Pages site is a static app with no server backend, so when you upload Excel it’s processed in your browser only and saved to localStorage on your computer.');
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
