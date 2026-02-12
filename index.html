@@ -128,6 +128,9 @@ tbody tr.selected{background:rgba(79,140,255,.12)}
 .gantt-cap-panel{margin-bottom:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px}
 .gantt-cap-panel h4{font-size:.76rem;color:var(--orange);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
 .gantt-cap-grid{display:flex;gap:8px;flex-wrap:wrap}
+.gantt-cap-grid.collapsed{max-height:46px;overflow:hidden}
+.gantt-cap-toggle{font-size:.62rem;color:var(--accent);cursor:pointer;padding:2px 8px;border:1px solid var(--accent);border-radius:4px;background:transparent;font-weight:600;margin-left:8px;white-space:nowrap}
+.gantt-cap-toggle:hover{background:var(--accent);color:#fff}
 .gantt-cap-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 9px;min-width:150px;max-width:195px}
 .gantt-cap-card .gc-name{font-size:.67rem;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gantt-cap-card .gc-bar{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:2px}
@@ -532,6 +535,7 @@ const state = {
   maxParallelProjects: 80,
   globalFilter: null,
   ganttTeamFilter: null,
+  ganttCapExpanded: false,
   highlightedProjectKey: null,
   savedRoadmaps: [],
   activeRoadmapId: null,
@@ -2160,6 +2164,10 @@ function _loadSavedRoadmaps() {
   } catch(e) { console.warn('Could not load saved roadmaps', e); }
 }
 
+function toggleGanttCapPanel() {
+  state.ganttCapExpanded = !state.ganttCapExpanded;
+  renderGanttCapacity();
+}
 function renderGanttCapacity() {
   const panel = document.getElementById('ganttCapPanel');
   if (!panel) return;
@@ -2210,7 +2218,7 @@ function renderGanttCapacity() {
     panel.innerHTML = '<div class="gantt-cap-panel"><h4><span>🔥 Team Capacity</span><span style="font-size:.65rem;font-weight:400;color:var(--muted)">No teams with capacity</span></h4></div>';
     return;
   }
-  let html = '<div class="gantt-cap-panel"><h4><span>🔥 Team Capacity — Peak Month Load</span><span style="font-size:.65rem;font-weight:400;color:var(--muted)">' + (overTeams.length ? '<span style="color:var(--red)">' + overTeams.length + ' over ' + threshold + '%</span> · ' : '✓ ') + activeTeams.length + ' teams' + (exCount ? ' · ' + exCount + ' excluded' : '') + '</span></h4>';
+  let html = '<div class="gantt-cap-panel"><h4><span>🔥 Team Capacity — Peak Month Load</span><span style="font-size:.65rem;font-weight:400;color:var(--muted)">' + (overTeams.length ? '<span style="color:var(--red)">' + overTeams.length + ' over ' + threshold + '%</span> · ' : '✓ ') + activeTeams.length + ' teams' + (exCount ? ' · ' + exCount + ' excluded' : '') + '<button class="gantt-cap-toggle" onclick="toggleGanttCapPanel()">' + (state.ganttCapExpanded ? '▲ Collapse' : '▼ Show All') + '</button></span></h4>';
 
   // If a project is highlighted, show its name above the grid
   const hlKey = state.highlightedProjectKey;
@@ -2221,7 +2229,7 @@ function renderGanttCapacity() {
     html += '<div style="padding:4px 10px 2px;font-size:.72rem;color:var(--accent);font-weight:600">🔍 ' + esc((hlProj.title||'').substring(0,50)) + ' — ' + hlStats.teamCount + ' teams · ' + hlStats.totalFTE.toFixed(1) + ' FTE <span style="font-weight:400;color:var(--muted);cursor:pointer" onclick="highlightGanttTeams(null,event);event.stopPropagation()">✕ clear</span></div>';
   }
 
-  html += '<div class="gantt-cap-grid">';
+  html += '<div class="gantt-cap-grid' + (state.ganttCapExpanded ? '' : ' collapsed') + '">';
   const allSorted = [...overTeams, ...underTeams];
   allSorted.forEach(t => {
     const pk = teamPeak[t.name];
