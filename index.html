@@ -2699,14 +2699,14 @@ function _runRoadmapEngine() {
           const dlDate = new Date(p.desirableDeadline);
           if (plannedEnd > dlDate) {
             rat += `🔴 Desirable deadline (${p.desirableDeadline}) CANNOT BE MET. `;
-            rat += `The ideal start (month ${idealStartIdx}) was not feasible due to capacity/parallel constraints. `;
+            rat += idealStartIdx >= 1 ? `The ideal start (month ${idealStartIdx}) was not feasible due to capacity/parallel constraints. ` : `The deadline has already passed. `;
             rat += `Earliest available slot is month ${bestStart}, which pushes the end date to ${p.endDate} — `;
             const overMs = plannedEnd - dlDate;
             const overDays = Math.ceil(overMs / 86400000);
             rat += `approximately ${overDays} day(s) past the deadline.\n\n`;
             // Detail why ideal slot failed
             const blockers = [];
-            for (let mi = idealStartIdx; mi < idealStartIdx + dMon && mi < months.length; mi++) {
+            for (let mi = Math.max(0, idealStartIdx); mi < Math.max(0, idealStartIdx) + dMon && mi < months.length; mi++) {
               if (monthConcurrent[months[mi].key] >= maxPar + (mi >= bestStart && mi < bestStart+dMon ? 1 : 0)) blockers.push(`Month ${months[mi].key}: parallel project limit (${maxPar}) reached`);
               for (const [tName, tVal] of Object.entries(teamAllocs)) {
                 if (!tVal || !teamCap[tName]) continue;
