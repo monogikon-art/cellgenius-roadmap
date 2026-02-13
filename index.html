@@ -124,6 +124,7 @@ tbody tr.selected{background:rgba(79,140,255,.12)}
 .gantt-bar.pipeline{background:linear-gradient(135deg,var(--accent),#3a6fd8)}
 .gantt-grid-line{position:absolute;top:0;bottom:0;width:1px;background:rgba(45,50,80,.3)}
 .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:4;opacity:.7}
+.gantt-milestone{position:absolute;top:1px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--red);z-index:5;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));cursor:help;transform:translateX(-7px)}
 /* Gantt Capacity Panel */
 .gantt-cap-panel{margin-bottom:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px}
 .gantt-cap-panel h4{font-size:.76rem;color:var(--orange);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
@@ -543,8 +544,54 @@ const state = {
 
 const RICE_REACH = {'1 - Minimal':1,'2 - Limited':2,'3 - Moderate':3,'4 - Broad':4,'5 - Extensive':5};
 const RICE_IMPACT = {'1 - Low Impact':1,'2 - Manageable':2,'3 - Medium':3,'4 - High':4,'5 - Critical':5};
-const RICE_CONF = {'50 % - Medium Confidence':.5,'75 % - High Confidence':.75,'100 % - Very Highly Confident':1};
-const RICE_EFFORT = {'1 - Simple':1,'2 - Moderately Simple':2,'3 - Complicated':3,'4 - Major':4};
+const RICE_CONF = {'25 % - Low Confidence':.25,'50 % - Medium Confidence':.5,'75 % - High Confidence':.75,'100 % - Very High Confidence':1};
+const RICE_EFFORT = {'1 - Simple':1,'2 - Moderately Simple':2,'3 - Complicated':3,'4 - Major':4,'5 - Extensive':5};
+
+// Tooltip descriptions from Configuration sheet
+const CONFIG_TOOLTIPS = {
+  reach: {
+    '1 - Minimal':'Internal teams only, <50 employees, no direct customer impact',
+    '2 - Limited':'Small customer segment <500 customers, no strategic clients',
+    '3 - Moderate':'Significant volume <5,000 customers OR few strategic/key clients',
+    '4 - Broad':'Large customer base <50,000 OR multiple strategic/key clients',
+    '5 - Extensive':'Majority of customers OR enterprise-wide impact including regulators'
+  },
+  impact: {
+    '1 - Low Impact':'Non-critical/cosmetic, no measurable financial or compliance risk',
+    '2 - Manageable':'Enhances efficiency or minor cost savings, manageable regulatory impact',
+    '3 - Medium':'Important service or noticeable revenue/cost impact, supports strategic objectives',
+    '4 - High':'Vital for operations or major cost/revenue impact, strong compliance/risk mitigation',
+    '5 - Critical':'Essential for business continuity, failure halts operations or causes severe penalties'
+  },
+  confidence: {
+    '25 % - Low Confidence':'Largely speculative or based on minimal data; high uncertainty',
+    '50 % - Medium Confidence':'Significant assumptions or uncertainty; limited validation',
+    '75 % - High Confidence':'Mostly reliable, minor assumptions or limited historical data',
+    '100 % - Very High Confidence':'Solid data, proven assumptions, previous similar projects'
+  },
+  effort: {
+    '1 - Simple':'Minimal dependencies; quick fix; ≤3 months',
+    '2 - Moderately Simple':'Few dependencies; limited stakeholders; 3–6 months',
+    '3 - Complicated':'Multiple teams; integration/testing required; 6–9 months',
+    '4 - Major':'Cross-functional; regulatory considerations; 9–12 months',
+    '5 - Extensive':'Highly complex programme; multiple systems/vendors; >12 months'
+  },
+  stratWeight: {
+    '1':'Non Strategic',
+    '2':'Strategic'
+  },
+  moscow: {
+    'Must Have':'Critical requirements that the project cannot proceed without',
+    'Should Have':'Important but not vital; high priority if capacity allows',
+    'Could Have':'Desirable but not necessary; include if time/resource permits',
+    'Wont Have':'Agreed not to deliver in this planning cycle'
+  },
+  bucket: {
+    'Now':'Start within the next 6 months',
+    'Next':'Start after 6 months and before 12 months',
+    'Future':'Postponed to start after 12 months'
+  }
+};
 
 const NATURES = ['Consulting & Professional Services','Facilities & Physical Assets','Hardware Devices','Major System Implementation','New Product / Software Implementation','Outsourced Resources','Software Enhancements','Software Licences & Subscriptions','System Upgrade'];
 const COVERAGES = ['BisB','Group','KSA','NBB','UAE'];
@@ -736,12 +783,12 @@ function recalcAll() {
 // Column mapping matching the Excel structure (1-based)
 const COL_MAP = {
   id:1, title:2, nature:3, coverage:4, division:5,
-  significance:6, theme:7, status:8, startDate:9,
-  endDate:10, duration:11, reach:12, impact:13,
-  confidence:14, effort:15, stratWeight:16, riceScore:17,
-  moscow:18, bucket:19
+  significance:6, theme:7, status:8, desirableDeadline:9, startDate:10,
+  endDate:11, duration:12, reach:13, impact:14,
+  confidence:15, effort:16, stratWeight:17, riceScore:18,
+  moscow:19, bucket:20
 };
-const TEAM_START_COL = 20;
+const TEAM_START_COL = 21;
 
 function _dtCell(v) {
   if (v == null) return null;
@@ -806,7 +853,7 @@ function parseExcelBuffer(data) {
     for (const [key, ci] of Object.entries(COL_MAP)) {
       const cell = ws[XLSX.utils.encode_cell({r, c: ci - 1})];
       const v = cell ? cell.v : null;
-      if (key === 'startDate' || key === 'endDate') {
+      if (key === 'startDate' || key === 'endDate' || key === 'desirableDeadline') {
         proj[key] = _dtCell(v);
       } else {
         proj[key] = _safeCell(v);
@@ -944,16 +991,34 @@ function exportToExcel() {
   if (!state.projects.length) { toast('No data to export', true); return; }
   const wb = XLSX.utils.book_new();
 
+  // Proper header names matching the Excel file
+  const HEADER_NAMES = {
+    id:'ID', title:'Title', nature:'Nature of Project', coverage:'Project Coverage',
+    division:'Division', significance:'Project Significance', theme:'Theme',
+    status:'Project Status', desirableDeadline:'Desirable Deadline', startDate:'Start Date',
+    endDate:'End Date', duration:'Project Duration (months)', reach:'RICE - Reach',
+    impact:'RICE - Impact', confidence:'RICE - Confidence', effort:'RICE - Effort',
+    stratWeight:'RICE - Strategic Weight', riceScore:'RICE Score', moscow:'MoSCoW', bucket:'Priority Bucket'
+  };
+
   // Build projects sheet
   const colKeys = Object.keys(COL_MAP);
-  const headers = [...colKeys, ...state.teamHeaders];
+  const headers = [...colKeys.map(k => HEADER_NAMES[k] || k), ...state.teamHeaders];
   const rows = [headers];
   state.projects.forEach(p => {
-    const row = colKeys.map(k => p[k] ?? null);
+    const row = colKeys.map(k => {
+      const v = p[k] ?? null;
+      // Convert date strings to Date objects for proper Excel formatting
+      if ((k === 'startDate' || k === 'endDate' || k === 'desirableDeadline') && v) {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? v : d;
+      }
+      return v;
+    });
     state.teamHeaders.forEach(th => row.push(p.teams && p.teams[th] ? p.teams[th] : null));
     rows.push(row);
   });
-  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const ws = XLSX.utils.aoa_to_sheet(rows, {cellDates: true});
   XLSX.utils.book_append_sheet(wb, ws, 'Project Details');
 
   // Build teams sheet
@@ -1265,6 +1330,22 @@ function riceColor(v) {
 
 function esc(s) { return s ? s.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
 
+// Build a select with tooltip descriptions on each option
+function _tipSelect(id, map, currentVal, tooltipMap) {
+  let html = `<select id="${id}"><option value="">—</option>`;
+  for (const k of Object.keys(map)) {
+    const tip = tooltipMap && tooltipMap[k] ? ` title="${esc(tooltipMap[k])}"` : '';
+    html += `<option${tip} ${currentVal===k?'selected':''}>${k}</option>`;
+  }
+  return html + '</select>';
+}
+function _tipLabel(text, tooltipCategory) {
+  const tips = CONFIG_TOOLTIPS[tooltipCategory];
+  if (!tips) return `<label>${text}</label>`;
+  const allTips = Object.entries(tips).map(([k,v]) => `${k}: ${v}`).join('&#10;');
+  return `<label style="cursor:help" title="${esc(allTips)}">${text} <span style="font-size:.6rem;opacity:.5">ⓘ</span></label>`;
+}
+
 /* ══════════════════════════════════════════════════════════════
    EDIT MODAL
    ══════════════════════════════════════════════════════════════ */
@@ -1282,13 +1363,14 @@ function openEdit(idx) {
     <div class="form-grid full"><label>Division</label><input id="m_division" value="${esc(p.division||'')}"></div>
     <div class="form-grid full"><label>Theme</label><input id="m_theme" value="${esc(p.theme||'')}" list="themeList">
       <datalist id="themeList">${themes.map(t=>`<option value="${esc(t)}">`).join('')}</datalist></div>
+    <div><label title="Target completion date set by project owner or regulator (optional)">Desirable Deadline <span style="font-size:.6rem;opacity:.5">ⓘ</span></label><input type="date" id="m_deadline" value="${p.desirableDeadline||''}"></div>
     <div><label>Start Date</label><input type="date" id="m_start" value="${p.startDate||''}"></div>
     <div><label>End Date</label><input type="date" id="m_end" value="${p.endDate||''}"></div>
-    <div><label>RICE Reach</label><select id="m_reach"><option value="">—</option>${Object.keys(RICE_REACH).map(k=>`<option ${p.reach===k?'selected':''}>${k}</option>`).join('')}</select></div>
-    <div><label>RICE Impact</label><select id="m_impact"><option value="">—</option>${Object.keys(RICE_IMPACT).map(k=>`<option ${p.impact===k?'selected':''}>${k}</option>`).join('')}</select></div>
-    <div><label>RICE Confidence</label><select id="m_confidence"><option value="">—</option>${Object.keys(RICE_CONF).map(k=>`<option ${p.confidence===k?'selected':''}>${k}</option>`).join('')}</select></div>
-    <div><label>RICE Effort</label><select id="m_effort"><option value="">—</option>${Object.keys(RICE_EFFORT).map(k=>`<option ${p.effort===k?'selected':''}>${k}</option>`).join('')}</select></div>
-    <div><label>Strategic Weight</label><input type="number" id="m_stratWeight" value="${p.stratWeight||1}" min="0.5" max="5" step="0.5"></div>
+    <div>${_tipLabel('RICE Reach','reach')}${_tipSelect('m_reach',RICE_REACH,p.reach,CONFIG_TOOLTIPS.reach)}</div>
+    <div>${_tipLabel('RICE Impact','impact')}${_tipSelect('m_impact',RICE_IMPACT,p.impact,CONFIG_TOOLTIPS.impact)}</div>
+    <div>${_tipLabel('RICE Confidence','confidence')}${_tipSelect('m_confidence',RICE_CONF,p.confidence,CONFIG_TOOLTIPS.confidence)}</div>
+    <div>${_tipLabel('RICE Effort','effort')}${_tipSelect('m_effort',RICE_EFFORT,p.effort,CONFIG_TOOLTIPS.effort)}</div>
+    <div>${_tipLabel('Strategic Weight','stratWeight')}<input type="number" id="m_stratWeight" value="${p.stratWeight||1}" min="0.5" max="5" step="0.5"></div>
     <div><label>RICE Score (auto)</label><input id="m_riceScore" value="${fmtScore(p.riceScore)}" readonly style="opacity:.7"></div>
   `;
 
@@ -1431,6 +1513,7 @@ function saveModal() {
   p.significance = $('#m_significance').value || null;
   p.division = $('#m_division').value || null;
   p.theme = $('#m_theme').value || null;
+  p.desirableDeadline = $('#m_deadline').value || null;
   p.startDate = $('#m_start').value || null;
   p.endDate = $('#m_end').value || null;
   p.reach = $('#m_reach').value || null;
@@ -1930,13 +2013,24 @@ function ganttRow(p, startRef, totalDays, monthCount) {
   const teamBadge = ts.teamCount > 0 ? ` <span style="font-size:.55rem;opacity:.8;margin-left:2px">👥${ts.teamCount}</span>` : '';
   const hlClass = state.highlightedProjectKey === key ? ' gantt-row-highlighted' : '';
 
+  // Milestone marker for desirable deadline
+  let milestoneHtml = '';
+  if (p.desirableDeadline) {
+    const dl = new Date(p.desirableDeadline);
+    if (!isNaN(dl) && dl >= startRef && dl <= cfgEnd) {
+      const dlPct = ((dl - startRef) / 86400000) / totalDays * 100;
+      milestoneHtml = `<div class="gantt-milestone" style="left:${dlPct}%" title="🎯 Desirable Deadline: ${p.desirableDeadline}"></div>`;
+    }
+  }
+
   return `<div class="gantt-row${hlClass}" data-pid="${esc(key)}" style="opacity:${included?'1':'.35'}" onclick="highlightGanttTeams('${esc(key)}',event)">
     <div class="gantt-row-label" title="${esc(p.title)}">
       <input type="checkbox" class="gantt-check" ${included?'checked':''} onchange="toggleGanttProject('${esc(key)}')">
       <span>${esc((p.title||'').substring(0,36))}</span>
     </div>
     <div class="gantt-row-bar-area">
-      <div class="gantt-bar ${cls} draggable" style="left:${left}%;width:${width}%" title="${esc(p.title)}${rice}\n${p.startDate} → ${p.endDate}\n${p.division||''}${fullTeamTip}"><div class="gantt-resize gantt-resize-l"></div><span class="gantt-bar-text">${clippedLeft}${(p.title||'').substring(0,28)}${rice}${teamBadge}${clippedRight}</span><div class="gantt-resize gantt-resize-r"></div></div>
+      <div class="gantt-bar ${cls} draggable" style="left:${left}%;width:${width}%" title="${esc(p.title)}${rice}\n${p.startDate} → ${p.endDate}${p.desirableDeadline?'\n🎯 Deadline: '+p.desirableDeadline:''}\n${p.division||''}${fullTeamTip}"><div class="gantt-resize gantt-resize-l"></div><span class="gantt-bar-text">${clippedLeft}${(p.title||'').substring(0,28)}${rice}${teamBadge}${clippedRight}</span><div class="gantt-resize gantt-resize-r"></div></div>
+      ${milestoneHtml}
     </div>
   </div>`;
 }
@@ -2459,27 +2553,62 @@ function _runRoadmapEngine() {
     const hasFTE = Object.values(teamAllocs).some(v => v > 0);
     const durSource = (p.duration && +p.duration > 0) ? 'excel' : 'estimated';
     const isMustHave = p.moscow === 'Must Have';
+    const isShouldHave = p.moscow === 'Should Have';
 
-    let bestStart = -1;
-    const maxTry = Math.min(months.length, 13); // try month indices 1..12
-    for (let si = 1; si < maxTry; si++) {
-      if (si + dMon > months.length) continue;
-      let fits = true;
-      // Check parallel limit
-      for (let mi = si; mi < si + dMon; mi++) {
-        if (monthConcurrent[months[mi].key] >= maxPar) { fits = false; break; }
+    // ── Deadline-aware scheduling for Must Have / Should Have ──
+    let idealStartIdx = -1;
+    let hasDeadline = false;
+    if (p.desirableDeadline && (isMustHave || isShouldHave)) {
+      const dl = new Date(p.desirableDeadline);
+      if (!isNaN(dl)) {
+        hasDeadline = true;
+        // Find the month index the deadline falls in
+        let dlMonthIdx = months.findIndex(m => dl >= m.start && dl <= m.end);
+        if (dlMonthIdx < 0 && dl > months[months.length - 1].end) dlMonthIdx = months.length - 1;
+        if (dlMonthIdx >= 0) {
+          // Ideal start = deadline month - duration, but not before month 1 (skip month 0 = current)
+          idealStartIdx = Math.max(1, dlMonthIdx - dMon + 1);
+        }
       }
-      if (!fits) continue;
-      // Check team capacity
+    }
+
+    // Helper: check if a given start index fits capacity + parallel limits
+    function _fitsAt(si) {
+      if (si < 1 || si + dMon > months.length) return false;
+      for (let mi = si; mi < si + dMon; mi++) {
+        if (monthConcurrent[months[mi].key] >= maxPar) return false;
+      }
       for (let mi = si; mi < si + dMon; mi++) {
         for (const [tName, tVal] of Object.entries(teamAllocs)) {
           if (!tVal || !teamCap[tName]) continue;
           const mc = teamCap[tName][months[mi].key];
-          if (!mc || mc.used + tVal > mc.max) { fits = false; break; }
+          if (!mc || mc.used + tVal > mc.max) return false;
         }
-        if (!fits) break;
       }
-      if (fits) { bestStart = si; break; }
+      return true;
+    }
+
+    let bestStart = -1;
+    const maxTry = Math.min(months.length, 13); // try month indices 1..12
+
+    if (hasDeadline && idealStartIdx >= 1) {
+      // Try ideal start first, then expand outward (prefer earlier to hit deadline)
+      if (_fitsAt(idealStartIdx)) {
+        bestStart = idealStartIdx;
+      } else {
+        // Search outward from ideal: -1, +1, -2, +2, ...
+        for (let d = 1; d < maxTry; d++) {
+          const earlier = idealStartIdx - d;
+          const later = idealStartIdx + d;
+          if (earlier >= 1 && _fitsAt(earlier)) { bestStart = earlier; break; }
+          if (later < maxTry && _fitsAt(later)) { bestStart = later; break; }
+        }
+      }
+    } else {
+      // Standard: scan from month 1 forward
+      for (let si = 1; si < maxTry; si++) {
+        if (_fitsAt(si)) { bestStart = si; break; }
+      }
     }
 
     // Must Have fallback: if no capacity slot found, force into months 2-5
@@ -2506,14 +2635,15 @@ function _runRoadmapEngine() {
       }
 
       // Bucket based on start month offset from today
+      const dlTag = hasDeadline ? ` 🎯${p.desirableDeadline}` : '';
       if (bestStart <= 6) {
         p.bucket = 'NOW';
         nowCount++;
-        log.push(`<span class="log-now">→ NOW: ${esc((p.title||'').substring(0,40))} [${p.moscow}] (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo ${durSource}, ${p.startDate} → ${p.endDate})</span>`);
+        log.push(`<span class="log-now">→ NOW: ${esc((p.title||'').substring(0,40))} [${p.moscow}] (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo ${durSource}, ${p.startDate} → ${p.endDate}${dlTag})</span>`);
       } else {
         p.bucket = 'NEXT';
         nextCount++;
-        log.push(`<span class="log-next">→ NEXT: ${esc((p.title||'').substring(0,40))} [${p.moscow}] (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo ${durSource}, ${p.startDate} → ${p.endDate})</span>`);
+        log.push(`<span class="log-next">→ NEXT: ${esc((p.title||'').substring(0,40))} [${p.moscow}] (RICE ${(+p.riceScore).toFixed(1)}, ${dMon}mo ${durSource}, ${p.startDate} → ${p.endDate}${dlTag})</span>`);
       }
     } else if (isMustHave) {
       // Must Have: NEVER FUTURE → force NEXT with dates
@@ -2587,8 +2717,8 @@ function _runRoadmapEngine() {
 function _estimateDuration(p) {
   // Estimate project duration in MONTHS based on effort
   const effortVal = parseRICE(p.effort, RICE_EFFORT) || 2;
-  // Heuristic: effort 1→2mo, 2→3mo, 3→5mo, 4→8mo
-  return [2, 3, 5, 8][Math.min(3, Math.max(0, effortVal - 1))];
+  // Heuristic: effort 1→2mo, 2→3mo, 3→5mo, 4→8mo, 5→12mo
+  return [2, 3, 5, 8, 12][Math.min(4, Math.max(0, effortVal - 1))];
 }
 
 function _countWorkDays(d1, d2) {
