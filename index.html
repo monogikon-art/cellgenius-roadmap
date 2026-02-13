@@ -1026,18 +1026,47 @@ function exportToExcel() {
   const rows = [headers];
   state.projects.forEach(p => {
     const row = colKeys.map(k => {
-      const v = p[k] ?? null;
-      // Convert date strings to Date objects for proper Excel formatting
-      if ((k === 'startDate' || k === 'endDate' || k === 'desirableDeadline') && v) {
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? v : d;
+      const v = p[k];
+      if (v == null || v === '') return '';
+      // Keep dates as strings — avoids SheetJS Date serialization issues
+      if (k === 'startDate' || k === 'endDate' || k === 'desirableDeadline') {
+        return typeof v === 'string' ? v : String(v);
+      }
+      // Ensure numeric fields stay numeric
+      if (['id','duration','reach','impact','confidence','effort','stratWeight','riceScore'].includes(k)) {
+        const n = parseFloat(v);
+        return isNaN(n) ? (v || '') : n;
       }
       return v;
     });
-    state.teamHeaders.forEach(th => row.push(p.teams && p.teams[th] ? p.teams[th] : null));
+    state.teamHeaders.forEach(th => row.push(p.teams && p.teams[th] ? p.teams[th] : ''));
     rows.push(row);
   });
-  const ws = XLSX.utils.aoa_to_sheet(rows, {cellDates: true});
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Set column widths for readability
+  ws['!cols'] = headers.map((h, i) => ({ wch: i === 1 ? 40 : i <= 8 ? 20 : 14 }));
+
+  // Format date columns (I, J, K = cols 8,9,10 zero-based) as date strings
+  const dateColIdxs = [colKeys.indexOf('desirableDeadline'), colKeys.indexOf('startDate'), colKeys.indexOf('endDate')];
+  const rangeRef = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  dateColIdxs.forEach(ci => {
+    if (ci < 0) return;
+    for (let r = 1; r <= rangeRef.e.r; r++) {
+      const addr = XLSX.utils.encode_cell({r, c: ci});
+      const cell = ws[addr];
+      if (cell && cell.v && typeof cell.v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(cell.v)) {
+        // Convert to proper Excel date
+        const d = new Date(cell.v + 'T00:00:00');
+        if (!isNaN(d.getTime())) {
+          cell.t = 'd';
+          cell.v = d;
+          cell.z = 'YYYY-MM-DD';
+        }
+      }
+    }
+  });
+
   XLSX.utils.book_append_sheet(wb, ws, 'Project Details');
 
   // Build teams sheet
@@ -1045,11 +1074,12 @@ function exportToExcel() {
     const tRows = [['Team Name', 'Mapping', 'Capacity']];
     state.teams.forEach(t => tRows.push([t.name, t.mapping || '', t.capacity || 0]));
     const ws2 = XLSX.utils.aoa_to_sheet(tRows);
+    ws2['!cols'] = [{wch:25},{wch:20},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws2, 'Teams Capacity');
   }
 
-  XLSX.writeFile(wb, `Roadmap_Export_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast('Exported to Excel ✓');
+  XLSX.writeFile(wb, `Roadmap_Export_${new Date().toISOString().slice(0,10)}.xlsx`, { bookType: 'xlsx', compression: true });
+  toast('Exported to Excel \u2713');
 }
 
 function exportJSON() {
